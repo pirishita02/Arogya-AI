@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Calorie Counter</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+  <style>
+    html,body{height:100%; background:#0a0f18;}
+    body{margin:0;overflow:auto; background:#0a0f18; color:#e5e7eb;}
+    .stage{position:relative; width:100vw; min-height:100vh; display:block; overflow:hidden;}
+    /* Dark animated background */
+    .bg-gradient{position:absolute; inset:0; background: radial-gradient(1200px 600px at 20% 10%, #111827, #0b1220 55%, #0a0f18 85%);}
+    /* Blurry neon blobs */
+    .bg-blobs{position:absolute; inset:0; overflow:hidden;}
+    .blob{position:absolute; width:42vmin; height:42vmin; filter: blur(40px); opacity:.35; border-radius:50%; mix-blend-mode:screen;}
+    .blob.b1{background:#22d3ee; left:-10vmin; top:10vmin; animation: float1 18s ease-in-out infinite}
+    .blob.b2{background:#f59e0b; right:-12vmin; top:30vmin; animation: float2 22s ease-in-out infinite}
+    .blob.b3{background:#a78bfa; left:20vmin; bottom:-12vmin; animation: float3 20s ease-in-out infinite}
+    @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(10vmin,-6vmin)}}
+    @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-12vmin,8vmin)}}
+    @keyframes float3{0%,100%{transform:translate(0,0)}50%{transform:translate(8vmin,6vmin)}}
+    /* Futuristic grid + scanlines (low-cost CSS) */
+    .bg-grid{position:absolute; inset:0; background-image:
+      linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px; animation: gridShift 30s linear infinite;}
+    @keyframes gridShift{0%{background-position:0 0,0 0}100%{background-position:512px 512px, 512px 512px}}
+    .scanlines{position:absolute; inset:0; background: repeating-linear-gradient( to bottom, rgba(255,255,255,.06), rgba(255,255,255,.06) 1px, transparent 3px ); mix-blend-mode: overlay; opacity:.35; pointer-events:none}
+    /* Concentric rings */
+    .bg-rings{position:absolute; inset:-10vmin; background: repeating-radial-gradient(circle at 50% 55%, rgba(255,255,255,.08) 0 2px, transparent 2px 80px); animation: rings 18s linear infinite; opacity:.35}
+    @keyframes rings{to{transform:rotate(360deg)}}
+    /* Sweeping light */
+    .bg-sweep{position:absolute; inset:0; background: conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.0), rgba(255,255,255,.08), rgba(255,255,255,.0) 25%); animation: sweep 10s linear infinite; mix-blend-mode: screen; opacity:.25}
+    @keyframes sweep{to{transform:rotate(360deg)}}
+    /* Dotted texture */
+    .bg-dots{position:absolute; inset:0; background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size: 18px 18px; opacity:.25}
+    /* Vignette */
+    .bg-vignette{position:absolute; inset:0; pointer-events:none; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,.25) 100%)}
+    /* Glassmorphism card */
+    .auth-card{position:relative; width:min(92vw,560px); border-radius:18px; background:rgba(255,255,255,.15); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border:1px solid rgba(255,255,255,.25); box-shadow:0 20px 60px rgba(0,0,0,.25); padding:28px; color:#111; margin:120px auto 80px;}
+    .auth-card h2{font-weight:900; font-size:32px; margin:0 0 6px; color:#111}
+    .auth-card p.sub{opacity:.9; margin:0 0 16px}
+    .auth-form{display:grid; gap:16px}
+    .auth-form label{font-weight:800; color:#111}
+    .auth-form input{padding:14px 14px; border:1px solid rgba(17,17,17,.15); border-radius:12px; font-size:16px; background:rgba(255,255,255,.9)}
+    .auth-form button{padding:14px 16px; border-radius:12px; background:#111; color:#fff; font-weight:900; border:none; cursor:pointer; transition: transform .08s ease}
+    .auth-form button:active{transform: scale(.98)}
+    .brand{position:absolute; top:22px; left:50%; transform:translateX(-50%); font-weight:1000; font-size:42px; z-index:5;
+      background: linear-gradient(90deg,#fff,#fde68a,#34d399,#22d3ee,#fff);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      animation: shine 6s linear infinite, floaty 6s ease-in-out infinite;
+      text-shadow: 0 6px 24px rgba(255,255,255,.35);
+    }
+    @keyframes shine{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+    @keyframes floaty{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
+    @media(max-width:760px){.brand{font-size:28px}}
+    /* Compact stacked marketing section */
+    .mini-section{max-width:1100px;margin:0 auto;padding:48px 20px}
+    .mini-section h3{font-size:28px;font-weight:900;margin:0 0 12px;text-align:center}
+    .mini-section p{opacity:.85;text-align:center;margin:0 0 18px}
+    .stack{display:grid;gap:20px}
+    .phone-mock{width:100%;max-width:360px;margin:0 auto;border-radius:38px;background:linear-gradient(180deg,#0f172a,#0b1220);border:10px solid #111;box-shadow:0 30px 80px rgba(0,0,0,.5);padding:18px}
+    .phone-screen{border-radius:28px;background:linear-gradient(180deg,#0b1220,#0f172a);min-height:620px;position:relative;overflow:hidden}
+    .badges{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:8px}
+    .badge{display:inline-flex;gap:8px;align-items:center;background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 14px;font-weight:800}
+    .badge small{font-weight:600;opacity:.8;display:block}
+    .quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:16px}
+    .quote{background:#0e1627;border:1px solid rgba(255,255,255,.06);padding:14px;border-radius:12px;font-style:italic}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:16px}
+    .shot{height:120px;border-radius:12px;background:linear-gradient(135deg,#1f2937,#0b1220);border:1px solid rgba(255,255,255,.06)}
+    /* Marketing sections */
+    .marketing{background:#0a0f18;color:#e5e7eb}
+    .section{max-width:1100px;margin:0 auto;padding:56px 20px}
+    .section h3{font-size:32px;margin:0 0 10px;font-weight:900;text-align:center}
+    .muted{opacity:.8;margin:0 0 18px;text-align:center}
+    .hero-grid{display:grid;grid-template-columns:1fr;gap:24px;align-items:center}
+    .phone-mock{width:100%;max-width:360px;margin:0 auto;border-radius:38px;background:linear-gradient(180deg,#0f172a,#0b1220);border:10px solid #111;box-shadow:0 30px 80px rgba(0,0,0,.5);padding:18px}
+    .phone-screen{border-radius:28px;background:linear-gradient(180deg,#0b1220,#0f172a);min-height:620px;position:relative;overflow:hidden}
+    .ring{position:absolute;right:16px;top:16px;width:84px;height:84px;border-radius:50%;border:10px solid rgba(255,255,255,.08);}
+    .metric{display:flex;gap:12px;margin:18px}
+    .chip{flex:1;background:rgba(255,255,255,.06);border-radius:14px;padding:12px;text-align:center}
+    .chip .big{font-size:20px;font-weight:800}
+    .foodcard{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.05);margin:10px 18px;padding:10px;border-radius:12px}
+    .foodthumb{width:44px;height:44px;border-radius:10px;background:#1f2937}
+    .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:10px}
+    .feature{background:#0e1627;border:1px solid rgba(255,255,255,.06);padding:16px;border-radius:12px}
+    .feature h4{margin:0 0 6px;font-weight:800}
+    .testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+    .quote{background:#0e1627;border:1px solid rgba(255,255,255,.06);padding:16px;border-radius:12px;font-style:italic}
+    .badges{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+    .badge{display:inline-flex;gap:8px;align-items:center;background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 14px;font-weight:800}
+    .badge small{font-weight:600;opacity:.8;display:block}
+    @media(max-width:960px){.hero-grid{grid-template-columns:1fr}}
+    /* Reveal on scroll */
+    .reveal{opacity:0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease}
+    .reveal.show{opacity:1; transform:none}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bg-gradient"></div>
+    <div class="bg-blobs">
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+    <div class="bg-grid"></div>
+    <div class="bg-dots"></div>
+    <div class="bg-rings"></div>
+    <div class="bg-sweep"></div>
+    <div class="scanlines"></div>
+    <div class="bg-vignette"></div>
+
+    <div class="brand">TrackyAI</div>
+    <div class="auth-card">
+      <h2>Welcome back</h2>
+      <p class="sub">Log in to continue your tracking</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      <form method="post" class="auth-form">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="you@example.com" required />
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required />
+        <button type="submit">Log in</button>
+      </form>
+      <p style="text-align:center; margin-top:10px;">No account? <a href="{{ url_for('start') }}">Create your account</a></p>
+    </div>
+    <div style="height:12px"></div>
+  </div>
+
+</body>
+</html>

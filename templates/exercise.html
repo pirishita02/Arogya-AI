@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exercise Teller</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+</head>
+<body>
+  <div class="container" style="max-width:720px;">
+    <h2>Exercise Teller</h2>
+    <form method="post" class="card" style="padding:16px;">
+      <label>Ask a question</label>
+      <input type="text" name="prompt" placeholder="e.g., Full-body workout for beginners?" required />
+      <button type="submit">Ask</button>
+    </form>
+    {% if answer %}
+      <div class="card" style="padding:16px; white-space:pre-wrap;">{{ answer }}</div>
+    {% endif %}
+    <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+  </div>
+</body>
+</html>

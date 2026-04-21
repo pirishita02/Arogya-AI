@@ -1,0 +1,128 @@
+/* ====== Reset ====== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ====== Body ====== */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  font-family: "Poppins", sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ====== Animated Food Background ====== */
+.animated-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: url("https://cdn-icons-png.flaticon.com/512/3480/3480891.png"),
+    url("https://cdn-icons-png.flaticon.com/512/1046/1046784.png"),
+    url("https://cdn-icons-png.flaticon.com/512/135/135620.png");
+  background-size: 100px, 120px, 90px;
+  background-repeat: repeat;
+  opacity: 0.05;
+  animation: move-bg 50s linear infinite;
+  z-index: 0;
+}
+
+@keyframes move-bg {
+  from {
+    background-position: 0 0, 100px 200px, 200px 400px;
+  }
+  to {
+    background-position: 1000px 1000px, 1100px 1200px, 1200px 1400px;
+  }
+}
+
+/* ====== Container ====== */
+.container {
+  position: relative;
+  z-index: 1;
+  background: #ffffffcc;
+  backdrop-filter: blur(10px);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 2rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+/* Full width container for body analysis */
+.full-width-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container:hover {
+  transform: translateY(-5px);
+}
+
+/* ====== Title ====== */
+h2 {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+p {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 0.9em;
+}
+
+/* ====== Upload Button ====== */
+.upload-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #ffb347, #ffcc33);
+  padding: 12px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 5px 15px rgba(255, 204, 51, 0.4);
+  transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #ff9a00, #ffcc33);
+}
+
+/* ====== Spinner ====== */
+#spinner {
+  display: none;
+  margin: 20px auto;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #ffb347;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ====== Calorie Count ====== */
+#calorie-count {
+  margin-top: 20px;
+  font-size: 1.1em;
+  color: #333;
+  font-weight: 500;
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 10px;
+}

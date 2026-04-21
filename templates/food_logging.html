@@ -1,0 +1,919 @@
+{% extends "base.html" %}
+
+{% block title %}Food Logging - Calorie App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .progress-item {
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .progress-bar-custom {
+        height: 25px;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 12px;
+        transition: width 0.6s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    .progress-fill.calories {
+        background: linear-gradient(90deg, #28a745, #20c997);
+    }
+    
+    .progress-fill.protein {
+        background: linear-gradient(90deg, #dc3545, #fd7e14);
+    }
+    
+    .progress-fill.fats {
+        background: linear-gradient(90deg, #ffc107, #fd7e14);
+    }
+    
+    .progress-fill.carbs {
+        background: linear-gradient(90deg, #6f42c1, #e83e8c);
+    }
+    
+    .search-section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .food-item {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .food-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .food-item.selected {
+        border: 2px solid #4e73df;
+        background: #f8f9ff;
+    }
+    
+    .meals-table {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table-custom {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .table-custom thead {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+    
+    .table-custom tbody tr:hover {
+        background-color: #f8f9ff;
+    }
+    
+    .weekly-chart {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-top: 2rem;
+    }
+    
+    .day-progress {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 10px;
+        background: #f8f9fa;
+        margin-bottom: 0.5rem;
+    }
+    
+    .day-progress.good {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .day-progress.warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .day-progress.danger {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #4e73df;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .detection-results {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .detected-food-item {
+        background: white;
+        border-radius: 8px;
+        padding: 0.8rem;
+        margin-bottom: 0.5rem;
+        border-left: 4px solid #28a745;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .confidence-badge {
+        background: #28a745;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .confidence-medium {
+        background: #ffc107;
+    }
+    
+    .confidence-low {
+        background: #dc3545;
+    }
+    
+    .detection-summary {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .upload-preview {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🍽️ Food Logging & Nutrition Tracking</h1>
+        </div>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress-section">
+                <h3 class="mb-4">Today's Nutrition Progress</h3>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalCalories">0</div>
+                            <div class="stats-label">Calories</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalProtein">0g</div>
+                            <div class="stats-label">Protein</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalFats">0g</div>
+                            <div class="stats-label">Fats</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalCarbs">0g</div>
+                            <div class="stats-label">Carbs</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🔥 Calories</span>
+                                <span id="caloriesProgress">0 / 2000</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill calories" id="caloriesBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🥩 Protein</span>
+                                <span id="proteinProgress">0g / 50g</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill protein" id="proteinBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🥑 Fats</span>
+                                <span id="fatsProgress">0g / 65g</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill fats" id="fatsBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🍞 Carbs</span>
+                                <span id="carbsProgress">0g / 250g</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill carbs" id="carbsBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Add Food Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="search-section">
+                <h4 class="mb-3">🔍 Search Food</h4>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="foodSearch" placeholder="Search for food...">
+                    <button class="btn btn-primary" type="button" id="searchBtn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                
+                <div id="searchResults" class="food-results">
+                    <!-- Search results will appear here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="search-section">
+                <h4 class="mb-3">📸 AI Food Detection</h4>
+                <div class="mb-3">
+                    <label for="imageUpload" class="form-label">Upload food photo for AI detection:</label>
+                    <input type="file" class="form-control" id="imageUpload" accept="image/*">
+                    <div class="form-text">Supported formats: JPG, PNG, WebP</div>
+                    <img id="uploadPreview" class="upload-preview" alt="Food preview">
+                </div>
+                
+                <button class="btn btn-success w-100" type="button" id="detectBtn" disabled>
+                    <i class="fas fa-camera"></i> Detect Food & Calories
+                </button>
+                
+                <div id="detectionResults" class="mt-3">
+                    <!-- AI detection results will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Selected Food Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="search-section">
+                <h4 class="mb-3">➕ Add Selected Food</h4>
+                <div id="selectedFood" class="mb-3">
+                    <p class="text-muted">Select a food from search results or AI detection to add it</p>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input type="number" class="form-control" id="quantity" placeholder="Quantity" value="1" step="0.1" min="0.1">
+                    <input type="text" class="form-control" id="mealType" placeholder="Meal type (breakfast, lunch, dinner, snack)" value="snack">
+                    <button class="btn btn-success" type="button" id="addFoodBtn" disabled>
+                        <i class="fas fa-plus"></i> Add Food
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="search-section">
+                <h4 class="mb-3">🤖 Add All Detected Foods</h4>
+                <div id="detectedFoodSummary" class="mb-3">
+                    <p class="text-muted">AI detection results will appear here</p>
+                </div>
+                
+                <button class="btn btn-primary w-100" type="button" id="addAllDetectedBtn" disabled>
+                    <i class="fas fa-plus-circle"></i> Add All Detected Foods
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Meals Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="meals-table">
+                <h4 class="mb-3">📋 Today's Meals</h4>
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Food</th>
+                                <th>Brand</th>
+                                <th>Quantity</th>
+                                <th>Calories</th>
+                                <th>Protein</th>
+                                <th>Fats</th>
+                                <th>Carbs</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mealsTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">No meals logged today</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Progress Chart -->
+    <div class="row">
+        <div class="col-12">
+            <div class="weekly-chart">
+                <h4 class="mb-3">📈 Weekly Progress</h4>
+                <div class="row" id="weeklyProgress">
+                    <!-- Weekly progress will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedFoodItem = null;
+    let detectedFoodItems = [];
+
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDailyProgress();
+        loadWeeklyProgress();
+        setupImageUpload();
+    });
+
+    // Setup image upload
+    function setupImageUpload() {
+        const imageUpload = document.getElementById('imageUpload');
+        const detectBtn = document.getElementById('detectBtn');
+        const uploadPreview = document.getElementById('uploadPreview');
+        
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Enable detect button
+                detectBtn.disabled = false;
+                
+                // Show preview
+                if (uploadPreview) {
+                    uploadPreview.src = URL.createObjectURL(file);
+                    uploadPreview.style.display = 'block';
+                }
+            } else {
+                detectBtn.disabled = true;
+                if (uploadPreview) {
+                    uploadPreview.style.display = 'none';
+                }
+            }
+        });
+        
+        detectBtn.addEventListener('click', detectFoodFromImage);
+        document.getElementById('addAllDetectedBtn').addEventListener('click', addAllDetectedFoods);
+    }
+
+    // Detect food from image
+    async function detectFoodFromImage() {
+        const imageUpload = document.getElementById('imageUpload');
+        const detectBtn = document.getElementById('detectBtn');
+        const detectionResults = document.getElementById('detectionResults');
+        
+        if (!imageUpload.files[0]) {
+            alert('Please select an image first');
+            return;
+        }
+        
+        // Show loading state
+        detectBtn.disabled = true;
+        detectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
+        detectionResults.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Analyzing your food photo...</div>';
+        
+        try {
+            const formData = new FormData();
+            formData.append('image', imageUpload.files[0]);
+            
+            const response = await fetch('/api/detect_food_from_image', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                displayDetectionResults(data);
+                detectedFoodItems = data.food_items || [];
+            } else {
+                detectionResults.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Failed to detect food: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error detecting food:', error);
+            detectionResults.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Failed to detect food: ${error.message}
+                </div>
+            `;
+        } finally {
+            // Reset button
+            detectBtn.disabled = false;
+            detectBtn.innerHTML = '<i class="fas fa-camera"></i> Detect Food & Calories';
+        }
+    }
+
+    function displayDetectionResults(data) {
+        const detectionResults = document.getElementById('detectionResults');
+        const detectedFoodSummary = document.getElementById('detectedFoodSummary');
+        const addAllDetectedBtn = document.getElementById('addAllDetectedBtn');
+        
+        // Display individual food items
+        let foodItemsHtml = '';
+        if (data.food_items && data.food_items.length > 0) {
+            foodItemsHtml = data.food_items.map((item, index) => {
+                const confidence = item.confidence || 0;
+                const confidenceClass = confidence >= 0.8 ? '' : confidence >= 0.6 ? 'confidence-medium' : 'confidence-low';
+                const confidenceText = confidence >= 0.8 ? 'High' : confidence >= 0.6 ? 'Medium' : 'Low';
+                
+                return `
+                    <div class="detected-food-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${item.name}</h6>
+                                <strong>${item.calories} calories</strong>
+                            </div>
+                            <span class="confidence-badge ${confidenceClass}">${confidenceText} (${Math.round(confidence * 100)}%)</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Display summary
+        const nutrition = data.nutrition || {};
+        const summaryHtml = `
+            <div class="detection-summary">
+                <h6>🤖 AI Detection Results</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Total Calories:</strong> ${data.total_calories || 0}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Items Found:</strong> ${data.food_items ? data.food_items.length : 0}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3">
+                        <small>Protein: ${nutrition.protein_g || 0}g</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small>Fats: ${nutrition.fat_g || 0}g</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small>Carbs: ${nutrition.carbs_g || 0}g</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small>Fiber: ${nutrition.fiber_g || 0}g</small>
+                    </div>
+                </div>
+                ${data.reasoning ? `<div class="mt-2"><small><em>"${data.reasoning}"</em></small></div>` : ''}
+            </div>
+        `;
+        
+        detectionResults.innerHTML = `
+            <div class="detection-results">
+                <h6>🔍 Detected Foods:</h6>
+                ${foodItemsHtml || '<p class="text-muted">No food items detected</p>'}
+            </div>
+        `;
+        
+        detectedFoodSummary.innerHTML = summaryHtml;
+        
+        // Enable add all button if items detected
+        addAllDetectedBtn.disabled = !data.food_items || data.food_items.length === 0;
+    }
+
+    // Add all detected foods
+    async function addAllDetectedFoods() {
+        if (detectedFoodItems.length === 0) {
+            alert('No detected foods to add');
+            return;
+        }
+        
+        const mealType = document.getElementById('mealType').value || 'snack';
+        const addAllBtn = document.getElementById('addAllDetectedBtn');
+        
+        // Show loading state
+        addAllBtn.disabled = true;
+        addAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        
+        try {
+            const response = await fetch('/api/log_detected_food', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    food_items: detectedFoodItems,
+                    meal_type: mealType
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Clear detection results
+                document.getElementById('detectionResults').innerHTML = '';
+                document.getElementById('detectedFoodSummary').innerHTML = '<p class="text-muted">AI detection results will appear here</p>';
+                document.getElementById('imageUpload').value = '';
+                document.getElementById('detectBtn').disabled = true;
+                
+                // Reset detected foods
+                detectedFoodItems = [];
+                
+                // Reload data
+                loadDailyProgress();
+                loadWeeklyProgress();
+                
+                alert(`Successfully added ${data.meals_logged} food items! Total: ${Math.round(data.total_nutrition.calories)} calories`);
+            } else {
+                alert('Failed to add detected foods: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error adding detected foods:', error);
+            alert('Failed to add detected foods: ' + error.message);
+        } finally {
+            // Reset button
+            addAllBtn.disabled = false;
+            addAllBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Add All Detected Foods';
+        }
+    }
+
+    // Search food
+    document.getElementById('searchBtn').addEventListener('click', searchFood);
+    document.getElementById('foodSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchFood();
+        }
+    });
+
+    async function searchFood() {
+        const query = document.getElementById('foodSearch').value.trim();
+        if (!query) return;
+
+        try {
+            const response = await fetch('/api/search_food', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: query })
+            });
+
+            const data = await response.json();
+            displaySearchResults(data.foods || []);
+        } catch (error) {
+            console.error('Error searching food:', error);
+            alert('Failed to search food');
+        }
+    }
+
+    function displaySearchResults(foods) {
+        const resultsDiv = document.getElementById('searchResults');
+        
+        if (foods.length === 0) {
+            resultsDiv.innerHTML = '<p class="text-muted">No foods found</p>';
+            return;
+        }
+
+        resultsDiv.innerHTML = foods.map(food => `
+            <div class="food-item" onclick="selectFood(${food.id}, '${food.name}', '${food.brand || ''}', ${food.calories}, ${food.protein_g}, ${food.fat_g}, ${food.carbs_g}, ${food.serving_qty || 1}, '${food.serving_unit || 'serving'}')">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${food.name}</h6>
+                        <small class="text-muted">${food.brand || 'Generic'}</small>
+                    </div>
+                    <div class="text-end">
+                        <strong>${food.calories} cal</strong>
+                        <div class="small text-muted">
+                            P: ${food.protein_g}g | F: ${food.fat_g}g | C: ${food.carbs_g}g
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function selectFood(id, name, brand, calories, protein, fats, carbs, servingQty, servingUnit) {
+        selectedFoodItem = {
+            id: id,
+            name: name,
+            brand: brand,
+            calories: calories,
+            protein: protein,
+            fats: fats,
+            carbs: carbs,
+            serving_qty: servingQty,
+            serving_unit: servingUnit
+        };
+
+        // Update UI
+        document.querySelectorAll('.food-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        event.currentTarget.classList.add('selected');
+
+        // Update selected food display
+        document.getElementById('selectedFood').innerHTML = `
+            <div class="alert alert-info">
+                <h6>${name}</h6>
+                <small>${brand || 'Generic'} - ${calories} cal per ${servingQty} ${servingUnit}</small>
+                <div class="mt-2">
+                    <small>Protein: ${protein}g | Fats: ${fats}g | Carbs: ${carbs}g</small>
+                </div>
+            </div>
+        `;
+
+        // Enable add button
+        document.getElementById('addFoodBtn').disabled = false;
+    }
+
+    // Add food
+    document.getElementById('addFoodBtn').addEventListener('click', addFood);
+
+    async function addFood() {
+        if (!selectedFoodItem) return;
+
+        const quantity = parseFloat(document.getElementById('quantity').value);
+        const mealType = document.getElementById('mealType').value;
+
+        if (!quantity || quantity <= 0) {
+            alert('Please enter a valid quantity');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/log_food', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    food_id: selectedFoodItem.id,
+                    quantity: quantity,
+                    meal_type: mealType
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Clear selection
+                selectedFoodItem = null;
+                document.getElementById('selectedFood').innerHTML = '<p class="text-muted">Select a food from search results to add it</p>';
+                document.getElementById('addFoodBtn').disabled = true;
+                document.getElementById('quantity').value = '1';
+                document.getElementById('foodSearch').value = '';
+                document.getElementById('searchResults').innerHTML = '';
+
+                // Reload data
+                loadDailyProgress();
+                loadWeeklyProgress();
+                
+                alert('Food added successfully!');
+            } else {
+                alert('Failed to add food: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error adding food:', error);
+            alert('Failed to add food');
+        }
+    }
+
+    async function loadDailyProgress() {
+        try {
+            const response = await fetch('/api/daily_progress');
+            const data = await response.json();
+
+            if (response.ok) {
+                updateProgressBars(data);
+                updateMealsTable(data.meals || []);
+            }
+        } catch (error) {
+            console.error('Error loading daily progress:', error);
+        }
+    }
+
+    function updateProgressBars(data) {
+        const targets = data.targets;
+        const consumed = data.consumed;
+        const percentages = data.percentages;
+
+        // Update stats
+        document.getElementById('totalCalories').textContent = Math.round(consumed.calories);
+        document.getElementById('totalProtein').textContent = Math.round(consumed.protein_g) + 'g';
+        document.getElementById('totalFats').textContent = Math.round(consumed.fat_g) + 'g';
+        document.getElementById('totalCarbs').textContent = Math.round(consumed.carbs_g) + 'g';
+
+        // Update progress bars
+        updateProgressBar('calories', consumed.calories, targets.calories, percentages.calories);
+        updateProgressBar('protein', consumed.protein_g, targets.protein_g, percentages.protein_g);
+        updateProgressBar('fats', consumed.fat_g, targets.fat_g, percentages.fat_g);
+        updateProgressBar('carbs', consumed.carbs_g, targets.carbs_g, percentages.carbs_g);
+    }
+
+    function updateProgressBar(macro, consumed, target, percentage) {
+        const bar = document.getElementById(macro + 'Bar');
+        const progress = document.getElementById(macro + 'Progress');
+        
+        bar.style.width = Math.min(percentage, 100) + '%';
+        bar.textContent = Math.round(percentage) + '%';
+        
+        if (macro === 'calories') {
+            progress.textContent = `${Math.round(consumed)} / ${Math.round(target)}`;
+        } else {
+            progress.textContent = `${Math.round(consumed)}g / ${Math.round(target)}g`;
+        }
+
+        // Change color based on progress
+        if (percentage >= 100) {
+            bar.style.background = 'linear-gradient(90deg, #dc3545, #c82333)';
+        } else if (percentage >= 80) {
+            bar.style.background = 'linear-gradient(90deg, #ffc107, #e0a800)';
+        } else {
+            // Keep original gradient colors
+        }
+    }
+
+    function updateMealsTable(meals) {
+        const tbody = document.getElementById('mealsTableBody');
+        
+        if (meals.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No meals logged today</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = meals.map(meal => `
+            <tr>
+                <td>${new Date(meal.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                <td>${meal.food_name}</td>
+                <td>${meal.brand || '-'}</td>
+                <td>${meal.quantity} ${meal.portion_text}</td>
+                <td><strong>${Math.round(meal.calories)}</strong></td>
+                <td>${meal.protein_g}g</td>
+                <td>${meal.fat_g}g</td>
+                <td>${meal.carbs_g}g</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMeal(${meal.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function deleteMeal(mealId) {
+        if (!confirm('Are you sure you want to delete this meal?')) return;
+
+        try {
+            // Note: You'll need to implement the delete endpoint
+            // For now, just reload the data
+            loadDailyProgress();
+            loadWeeklyProgress();
+        } catch (error) {
+            console.error('Error deleting meal:', error);
+        }
+    }
+
+    async function loadWeeklyProgress() {
+        try {
+            const response = await fetch('/api/weekly_progress');
+            const data = await response.json();
+
+            if (response.ok) {
+                displayWeeklyProgress(data.weekly_data || []);
+            }
+        } catch (error) {
+            console.error('Error loading weekly progress:', error);
+        }
+    }
+
+    function displayWeeklyProgress(weeklyData) {
+        const container = document.getElementById('weeklyProgress');
+        
+        container.innerHTML = weeklyData.map(day => {
+            const caloriesPercent = (day.consumed.calories / day.targets.calories * 100) || 0;
+            let statusClass = 'good';
+            let statusText = 'Great!';
+            
+            if (caloriesPercent < 80) {
+                statusClass = 'warning';
+                statusText = 'Low';
+            } else if (caloriesPercent > 120) {
+                statusClass = 'danger';
+                statusText = 'High';
+            }
+
+            return `
+                <div class="col-md">
+                    <div class="day-progress ${statusClass}">
+                        <h6>${day.day_name}</h6>
+                        <div class="small">${Math.round(day.consumed.calories)} / ${Math.round(day.targets.calories)} cal</div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar" style="width: ${Math.min(caloriesPercent, 100)}%"></div>
+                        </div>
+                        <div class="small mt-1">${statusText} (${day.meals_logged} meals)</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+</script>
+{% endblock %}

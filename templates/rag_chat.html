@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: calc(100vh - 200px);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        padding: 12px 16px;
+        border-radius: 18px;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+    
+    .message.user {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+    
+    .message.assistant {
+        background: white;
+        color: #333;
+        border: 1px solid #dee2e6;
+        margin-right: auto;
+    }
+    
+    .retrieved-docs {
+        margin-top: 10px;
+        padding: 10px;
+        background: #e9ecef;
+        border-radius: 8px;
+        font-size: 0.85em;
+    }
+    
+    .retrieved-docs h6 {
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+    
+    .retrieved-doc {
+        margin-bottom: 8px;
+        padding: 8px;
+        background: white;
+        border-radius: 4px;
+        border-left: 3px solid #28a745;
+    }
+    
+    .chat-input-container {
+        display: flex;
+        gap: 10px;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .chat-input {
+        flex: 1;
+        border: 1px solid #dee2e6;
+        border-radius: 25px;
+        padding: 12px 20px;
+        font-size: 16px;
+        resize: none;
+        max-height: 120px;
+    }
+    
+    .send-btn {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #007bff;
+        border: none;
+        color: white;
+        transition: background-color 0.2s;
+    }
+    
+    .send-btn:hover {
+        background: #0056b3;
+    }
+    
+    .send-btn:disabled {
+        background: #6c757d;
+    }
+    
+    .typing-indicator {
+        display: none;
+        padding: 12px 16px;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 18px;
+        margin-right: auto;
+        max-width: 80px;
+    }
+    
+    .typing-dots {
+        display: flex;
+        gap: 4px;
+    }
+    
+    .typing-dot {
+        width: 8px;
+        height: 8px;
+        background: #6c757d;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+    
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    .chat-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .chat-header h2 {
+        color: #007bff;
+        margin-bottom: 10px;
+    }
+    
+    .chat-header p {
+        color: #6c757d;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="chat-header">
+        <h2>🤖 AI Nutrition & Fitness Chat</h2>
+        <p>Ask me anything about nutrition, fitness, and health - powered by advanced AI with knowledge retrieval</p>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                👋 Hi! I'm your AI nutrition and fitness assistant. I can help you with:
+                <ul>
+                    <li>Personalized nutrition advice</li>
+                    <li>Exercise recommendations</li>
+                    <li>Health and wellness tips</li>
+                    <li>Meal planning guidance</li>
+                </ul>
+                Feel free to ask any questions!
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <textarea 
+                id="chatInput" 
+                class="chat-input" 
+                placeholder="Ask about nutrition, fitness, or health..."
+                rows="1"
+            ></textarea>
+            <button id="sendBtn" class="send-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let sessionId = 'session_' + Date.now();
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+    
+    // Auto-resize textarea
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    
+    // Send message function
+    async function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+        
+        // Add user message
+        addMessage(message, 'user');
+        
+        // Clear input
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        
+        // Disable send button
+        sendBtn.disabled = true;
+        
+        // Show typing indicator
+        typingIndicator.style.display = 'block';
+        
+        try {
+            const response = await fetch('/api/rag_chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    session_id: sessionId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to send message');
+            }
+            
+            // Hide typing indicator
+            typingIndicator.style.display = 'none';
+            
+            // Add assistant response with retrieved documents
+            addMessageWithDocs(data.response, data.rag_info ? data.rag_info.sources : [], 'assistant');
+            
+        } catch (error) {
+            typingIndicator.style.display = 'none';
+            addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+            console.error('Error:', error);
+        } finally {
+            sendBtn.disabled = false;
+            chatInput.focus();
+        }
+    }
+    
+    // Add message function
+    function addMessage(content, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = content;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Add message with retrieved documents
+    function addMessageWithDocs(content, retrievedDocs, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        
+        // Main content
+        const contentDiv = document.createElement('div');
+        contentDiv.textContent = content;
+        messageDiv.appendChild(contentDiv);
+        
+        // RAG status indicator
+        if (type === 'assistant' && retrievedDocs && retrievedDocs.length > 0) {
+            const ragDiv = document.createElement('div');
+            ragDiv.className = 'retrieved-docs';
+            
+            const ragStatus = document.createElement('h6');
+            ragStatus.innerHTML = `🧠 <strong>ADVANCED RAG SYSTEM</strong> - ${retrievedDocs.length} sources retrieved`;
+            ragDiv.appendChild(ragStatus);
+            
+            retrievedDocs.forEach(doc => {
+                const docDiv = document.createElement('div');
+                docDiv.className = 'retrieved-doc';
+                docDiv.innerHTML = `
+                    <strong>${doc.title}</strong> 
+                    <span class="badge bg-primary ms-1">${doc.category}</span>
+                    <span class="badge bg-secondary ms-1">Relevance: ${(doc.relevance_score * 100).toFixed(1)}%</span>
+                    <span class="badge bg-info ms-1">Similarity: ${(doc.similarity_score * 100).toFixed(1)}%</span>
+                    <br><small>${doc.content_preview}</small>
+                `;
+                ragDiv.appendChild(docDiv);
+            });
+            
+            messageDiv.appendChild(ragDiv);
+        }
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Focus input on load
+    chatInput.focus();
+</script>
+{% endblock %}

@@ -1,0 +1,718 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    /* Reset and base styles */
+    * {
+        box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+    }
+    
+    html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        min-height: 100vh;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+    }
+    
+    /* Full page layout */
+    body {
+        min-width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .main-content {
+        flex: 1;
+        width: 100%;
+        background: #f8f9fa;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .analysis-container {
+        width: 100%;
+        height: 100%;
+        padding: 1.5rem;
+        margin: 0;
+        box-sizing: border-box;
+    }
+    
+    .analysis-layout {
+        display: -webkit-flex;
+        display: flex;
+        -webkit-flex-direction: row;
+        flex-direction: row;
+        width: 100%;
+        height: calc(100vh - 150px);
+        min-height: 500px;
+        margin: 0;
+        padding: 0 1.5rem 1.5rem;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+        -webkit-box-pack: justify;
+        justify-content: space-between;
+        gap: 1.5rem;
+        -webkit-flex-wrap: nowrap;
+        flex-wrap: nowrap;
+    }
+    
+    /* 3D Model Container */
+    .model-container {
+        -webkit-flex: 2 1 0%;
+        flex: 2 1 0%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Analysis Panel */
+    .analysis-panel {
+        -webkit-flex: 1 1 0%;
+        flex: 1 1 0%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        min-width: 0;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* 3D Model Canvas */
+    #body-model {
+        -webkit-flex: 1 1 auto;
+        flex: 1 1 auto;
+        min-height: 400px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-align-items: center;
+        align-items: center;
+        -webkit-justify-content: center;
+        justify-content: center;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        height: 100%;
+    }
+    .card {
+        height: 100%;
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 10px 15px;
+        border: 1px solid #dee2e6;
+    }
+    .btn-primary {
+        background-color: #4e73df;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    .btn-primary:hover {
+        background-color: #2e59d9;
+    }
+</style>
+{% endblock %}
+
+{% block full_width_content %}
+<div class="main-content">
+    <div class="analysis-container">
+        <h2 class="mb-4">3D Body Analysis</h2>
+        <div class="analysis-layout">
+            <div class="model-container">
+                <h5 class="mb-3">Your 3D Body Model</h5>
+                <div id="body-model">
+                    <p class="text-muted text-center my-5">Loading 3D visualization...</p>
+                </div>
+            </div>
+
+<div class="analysis-panel">
+                <h5 class="mb-3">Advanced Body Analysis</h5>
+                    <form id="analysisForm">
+                        <!-- Basic Measurements -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Age</label>
+                                <input type="number" class="form-control" name="age" placeholder="25" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Gender</label>
+                                <select class="form-select" name="sex" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Height (cm)</label>
+                                <input type="number" class="form-control" name="height_cm" placeholder="175" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Weight (kg)</label>
+                                <input type="number" class="form-control" name="weight_kg" placeholder="70" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Waist (cm)</label>
+                                <input type="number" class="form-control" name="waist_cm" placeholder="80" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Neck (cm)</label>
+                                <input type="number" class="form-control" name="neck_cm" placeholder="38" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Your Goal</label>
+                                <select class="form-select" name="goal" required>
+                                    <option value="">Select Goal</option>
+                                    <option value="lose_weight">Lose Weight</option>
+                                    <option value="maintain_weight">Maintain Weight</option>
+                                    <option value="gain_weight">Gain Weight</option>
+                                    <option value="gain_muscle">Gain Muscle</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Activity Levels -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Exercise Level</label>
+                                <select class="form-select" name="exercise_level" required>
+                                    <option value="">Select Exercise Level</option>
+                                    <option value="beginner">Beginner (0-1 workouts/week)</option>
+                                    <option value="intermediate">Intermediate (2-3 workouts/week)</option>
+                                    <option value="advanced">Advanced (4+ workouts/week)</option>
+                                    <option value="athlete">Athlete (Daily training)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Work Activity Level</label>
+                                <select class="form-select" name="work_activity_level" required>
+                                    <option value="">Select Work Activity</option>
+                                    <option value="desk_job">Desk Job (Sedentary)</option>
+                                    <option value="light_work">Light Work (Standing/walking)</option>
+                                    <option value="active_work">Active Work (Physical movement)</option>
+                                    <option value="physical_work">Physical Work (Heavy labor)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- General Activity Level -->
+                        <div class="mb-3">
+                            <label class="form-label">General Activity Level</label>
+                            <select class="form-select" name="activity_level" required>
+                                <option value="">Select General Activity</option>
+                                <option value="sedentary">Sedentary (Little to no exercise)</option>
+                                <option value="light">Lightly Active (Light exercise 1-3 days/week)</option>
+                                <option value="moderate">Moderately Active (Moderate exercise 3-5 days/week)</option>
+                                <option value="active">Very Active (Hard exercise 6-7 days/week)</option>
+                                <option value="athlete">Extra Active (Very hard exercise & physical job)</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            Generate AI-Powered Analysis
+                        </button>
+                    </form>
+                    
+                    <div id="results" class="mt-4 d-none">
+                        <h5>Your Personalized Plan</h5>
+                        <div class="card mt-2">
+                            <div class="card-body p-3" id="analysisResults">
+                                <!-- Results will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Three.js for 3D rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+    // Initialize 3D model
+    function init3DModel() {
+        console.log('Initializing 3D model...');
+        const container = document.getElementById('body-model');
+        
+        if (!container) {
+            console.error('Body model container not found!');
+            return;
+        }
+        
+        // Check if Three.js loaded
+        if (typeof THREE === 'undefined') {
+            console.error('Three.js not loaded!');
+            container.innerHTML = '<div class="alert alert-warning">3D library failed to load. Please check your internet connection.</div>';
+            return;
+        }
+        
+        try {
+            // Scene setup
+            const scene = new THREE.Scene();
+            scene.background = null;
+            
+            // Camera setup
+            const camera = new THREE.PerspectiveCamera(
+                75, 
+                container.clientWidth / container.clientHeight, 
+                0.1, 
+                1000
+            );
+            camera.position.z = 5;
+            
+            // Renderer setup
+            const renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.innerHTML = '';
+            container.appendChild(renderer.domElement);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            scene.add(directionalLight);
+            
+            console.log('Scene setup complete');
+            
+            // Create simple human body model
+            const humanGroup = new THREE.Group();
+            
+            // Materials
+            const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xf0c8b4 });
+            const clothingMaterial = new THREE.MeshLambertMaterial({ color: 0x2c5aa0 });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const head = new THREE.Mesh(headGeometry, skinMaterial);
+            head.position.y = 1.5;
+            humanGroup.add(head);
+            
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.8, 1.0, 1.5, 16);
+            const body = new THREE.Mesh(bodyGeometry, clothingMaterial);
+            body.position.y = 0;
+            humanGroup.add(body);
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1.2, 12);
+            
+            const leftArm = new THREE.Mesh(armGeometry, skinMaterial);
+            leftArm.position.set(-1.2, 0.2, 0);
+            leftArm.rotation.z = 0.5;
+            humanGroup.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeometry, skinMaterial);
+            rightArm.position.set(1.2, 0.2, 0);
+            rightArm.rotation.z = -0.5;
+            humanGroup.add(rightArm);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 12);
+            
+            const leftLeg = new THREE.Mesh(legGeometry, clothingMaterial);
+            leftLeg.position.set(-0.4, -1.5, 0);
+            humanGroup.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, clothingMaterial);
+            rightLeg.position.set(0.4, -1.5, 0);
+            humanGroup.add(rightLeg);
+            
+            scene.add(humanGroup);
+            console.log('Human model created');
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate the human model
+                humanGroup.rotation.y += 0.01;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            console.log('3D model initialization complete!');
+            
+        } catch (error) {
+            console.error('Error initializing 3D model:', error);
+            container.innerHTML = '<div class="alert alert-danger">3D model failed to load: ' + error.message + '</div>';
+        }
+    }
+    
+    // Initialize when page loads
+    window.addEventListener('load', init3DModel);
+    
+    // Also try to initialize when DOM is ready (backup)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init3DModel);
+    } else {
+        init3DModel();
+    }
+</script>
+<script>
+    // Handle form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('analysisForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                try {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const spinner = submitBtn.querySelector('.spinner-border');
+                    const results = document.getElementById('results');
+                    const analysisDiv = document.getElementById('analysisResults');
+
+                    // Disable button and show spinner
+                    submitBtn.disabled = true;
+                    spinner.classList.remove('d-none');
+
+                    // Collect form data
+                    const data = {
+                        age: formData.get('age'),
+                        sex: formData.get('sex'),
+                        height_cm: formData.get('height_cm'),
+                        weight_kg: formData.get('weight_kg'),
+                        waist_cm: formData.get('waist_cm'),
+                        neck_cm: formData.get('neck_cm'),
+                        goal: formData.get('goal'),
+                        exercise_level: formData.get('exercise_level'),
+                        work_activity_level: formData.get('work_activity_level'),
+                        activity_level: formData.get('activity_level')
+                    };
+
+                    // Send to backend
+                    const response = await fetch('/api/body_analysis', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Failed to generate analysis');
+                    }
+
+                    // Display results with RAG indicators
+                    if (result.analysis) {
+                        let ragStatus = '';
+                        if (result.rag_info && result.rag_info.system_active) {
+                            ragStatus = `
+                                <div class="alert alert-success d-flex align-items-center mb-3">
+                                    <span class="badge bg-success me-2">🧠 RAG ACTIVE</span>
+                                    <span>Advanced AI system retrieved ${result.rag_info.retrieved_documents} relevant documents from knowledge base</span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <h6>📚 Sources Used:</h6>
+                                    <div class="row">
+                                        ${result.rag_info.sources.map((source, index) => `
+                                            <div class="col-md-6 mb-2">
+                                                <div class="card card-body border-left-info">
+                                                    <h6 class="card-title mb-1">${source.title}</h6>
+                                                    <div class="mb-1">
+                                                        <span class="badge bg-primary">${source.category}</span>
+                                                        <span class="badge bg-secondary ms-1">Relevance: ${(source.relevance_score * 100).toFixed(1)}%</span>
+                                                        <span class="badge bg-info ms-1">Similarity: ${(source.similarity_score * 100).toFixed(1)}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        let metricsHtml = '';
+                        if (result.bmi) {
+                            metricsHtml = `
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-primary">BMI</h6>
+                                                <h4 class="mb-0">${result.bmi.toFixed(1)}</h4>
+                                                <small class="text-muted">${getBMICategory(result.bmi)}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-success">TDEE</h6>
+                                                <h4 class="mb-0">${Math.round(result.tdee)}</h4>
+                                                <small class="text-muted">calories/day</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-warning">Target</h6>
+                                                <h4 class="mb-0">${Math.round(result.target_calories)}</h4>
+                                                <small class="text-muted">calories/day</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-info">Body Fat</h6>
+                                                <h4 class="mb-0">${result.body_fat_percentage.toFixed(1)}%</h4>
+                                                <small class="text-muted">estimated</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        let macrosHtml = '';
+                        if (result.macros) {
+                            macrosHtml = `
+                                <div class="mt-4">
+                                    <h6>📊 Macronutrient Breakdown</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h6 class="text-danger">Protein</h6>
+                                                    <h5>${result.macros.protein_g}g</h5>
+                                                    <small>${result.macros.protein_calories} cal (${result.macros.protein_percentage}%)</small>
+                                                    <div class="progress mt-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-danger" style="width: ${result.macros.protein_percentage}%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h6 class="text-warning">Carbs</h6>
+                                                    <h5>${result.macros.carbs_g}g</h5>
+                                                    <small>${result.macros.carbs_calories} cal (${result.macros.carbs_percentage}%)</small>
+                                                    <div class="progress mt-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-warning" style="width: ${result.macros.carbs_percentage}%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h6 class="text-success">Fats</h6>
+                                                    <h5>${result.macros.fats_g}g</h5>
+                                                    <small>${result.macros.fats_calories} cal (${result.macros.fats_percentage}%)</small>
+                                                    <div class="progress mt-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-success" style="width: ${result.macros.fats_percentage}%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        analysisDiv.innerHTML = `
+                            ${ragStatus}
+                            <div class="mb-4">
+                                <h5>Your AI-Powered Analysis</h5>
+                                <p class="text-muted">Personalized recommendations based on your metrics and goals</p>
+                            </div>
+                            ${metricsHtml}
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">🤖 AI Personalized Plan</h6>
+                                            <div class="analysis-content">${result.analysis.replace(/\n/g, '<br>')}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            ${macrosHtml}
+
+                            <div class="mt-4">
+                                <h6>📈 Next Steps</h6>
+                                <ol>
+                                    <li>Start tracking your daily meals and workouts</li>
+                                    <li>Take weekly progress photos and measurements</li>
+                                    <li>Adjust your plan every 4-6 weeks based on progress</li>
+                                    <li>Stay consistent with your nutrition and exercise routine</li>
+                                </ol>
+                            </div>
+                        `;
+
+                        results.classList.remove('d-none');
+                        results.scrollIntoView({ behavior: 'smooth' });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to generate analysis: ' + error.message);
+                } finally {
+                    // Reset form state
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    const spinner = submitBtn.querySelector('.spinner-border');
+                    submitBtn.disabled = false;
+                    spinner.classList.add('d-none');
+                }
+            });
+        }
+        
+        // Helper function to get BMI category
+        function getBMICategory(bmi) {
+            if (bmi < 18.5) return 'Underweight';
+            if (bmi < 25) return 'Normal';
+            if (bmi < 30) return 'Overweight';
+            return 'Obese';
+        }
+    });
+</script>
+
+<style>
+    /* 3D Model Container Styles */
+    .analysis-container {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .analysis-layout {
+        display: flex;
+        width: 100%;
+        gap: 2rem;
+    }
+    
+    .model-container {
+        flex: 0 0 400px;
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    #body-model {
+        width: 100%;
+        height: 400px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .analysis-panel {
+        flex: 1;
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card {
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 10px 15px;
+        border: 1px solid #dee2e6;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    .btn-primary {
+        background-color: #4e73df;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background-color 0.15s ease-in-out;
+    }
+    .btn-primary:hover {
+        background-color: #2e59d9;
+    }
+    .analysis-content {
+        line-height: 1.6;
+    }
+    .analysis-content h1, .analysis-content h2, .analysis-content h3 {
+        color: #4e73df;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .analysis-content ul, .analysis-content ol {
+        margin-bottom: 1rem;
+    }
+    .analysis-content li {
+        margin-bottom: 0.5rem;
+    }
+    .metric-card {
+        border-left: 4px solid #4e73df;
+    }
+    .progress {
+        background-color: #e9ecef;
+    }
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .analysis-layout {
+            flex-direction: column;
+        }
+        
+        .model-container {
+            flex: 0 0 auto;
+        }
+        
+        #body-model {
+            height: 300px;
+        }
+    }
+</style>
+{% endblock %}

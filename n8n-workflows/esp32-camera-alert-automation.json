@@ -1,0 +1,367 @@
+{
+  "name": "ESP32-CAM Health Alert Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "esp32-health-monitor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Health Alert Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "esp32-health-alerts"
+    },
+    {
+      "parameters": {
+        "url": "http://10.37.112.48/health",
+        "options": {}
+      },
+      "id": "http-1",
+      "name": "Get Health Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.heartRate }}",
+              "rightValue": 120,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "condition-2", 
+              "leftValue": "={{ $json.body.heartRate }}",
+              "rightValue": 40,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "condition-3",
+              "leftValue": "={{ $json.body.stressLevel }}",
+              "rightValue": 80,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "condition-4",
+              "leftValue": "={{ $json.body.bodyTemperature }}",
+              "rightValue": 38,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "if-1",
+      "name": "Check Health Alerts",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.cameraIP || 'http://10.37.112.50' }}/camera?action=start",
+        "options": {}
+      },
+      "id": "camera-start-1",
+      "name": "Start Camera Recording",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.cameraIP || 'http://10.37.112.50' }}/status",
+        "options": {}
+      },
+      "id": "camera-status-1",
+      "name": "Get Camera Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assignment-1",
+              "name": "alertType",
+              "value": "={{ $json.body.heartRate > 120 ? 'high_heart_rate' : $json.body.heartRate < 40 ? 'low_heart_rate' : $json.body.stressLevel > 80 ? 'high_stress' : 'high_temperature' }}",
+              "type": "string"
+            },
+            {
+              "id": "assignment-2",
+              "name": "alertValue",
+              "value": "={{ $json.body.heartRate > 120 || $json.body.heartRate < 40 ? $json.body.heartRate : $json.body.stressLevel > 80 ? $json.body.stressLevel : $json.body.bodyTemperature }}",
+              "type": "number"
+            },
+            {
+              "id": "assignment-3",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "assignment-4",
+              "name": "cameraIP",
+              "value": "http://10.37.112.50",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-1",
+      "name": "Set Alert Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 480]
+    },
+    {
+      "parameters": {
+        "fromEmail": "health-monitor@yourdomain.com",
+        "toEmail": "your-email@example.com",
+        "subject": "Health Alert Detected - {{ $json.alertType.replace('_', ' ').toUpperCase() }}",
+        "text": "Health Alert Notification\n\nAlert Type: {{ $json.alertType.replace('_', ' ').toUpperCase() }}\nValue: {{ $json.alertValue }}\nTime: {{ $json.timestamp }}\n\nCamera recording has been automatically started.\n\nCurrent Health Status:\nHeart Rate: {{ $json.body.heartRate }} BPM\nStress Level: {{ $json.body.stressLevel }}%\nTemperature: {{ $json.body.bodyTemperature }}°C\nOxygen Level: {{ $json.body.oxygenLevel }}%\n\nCamera Stream: http://10.37.112.50:81/stream",
+        "options": {}
+      },
+      "id": "email-1",
+      "name": "Send Alert Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api.telegram.org/botYOUR_BOT_TOKEN/sendMessage",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"chat_id\": \"YOUR_CHAT_ID\",\n  \"text\": \"\\u26a0\\ufe0f HEALTH ALERT DETECTED\\n\\n\\ud83d\\udc89 Alert Type: {{ $json.alertType.replace('_', ' ').toUpperCase() }}\\n\\ud83d\udcca Value: {{ $json.alertValue }}\\n\\u23f0 Time: {{ $json.timestamp }}\\n\\ud83d\udcf9 Camera recording started\\n\\nCurrent Status:\\nHeart Rate: {{ $json.body.heartRate }} BPM\\nStress: {{ $json.body.stressLevel }}%\\nTemp: {{ $json.body.bodyTemperature }}°C\\nO2: {{ $json.body.oxygenLevel }}%\\n\\nCamera: http://10.37.112.50:81/stream\"\n}",
+        "options": {}
+      },
+      "id": "telegram-1",
+      "name": "Send Telegram Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "url": "http://10.37.112.48/insights",
+        "options": {}
+      },
+      "id": "insights-1",
+      "name": "Get Health Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 480]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assignment-5",
+              "name": "alertSummary",
+              "value": "={{ 'Health Alert: ' + $json.alertType.replace('_', ' ').toUpperCase() + ' (' + $json.alertValue + ') - ' + $json.body.overallHealth }}",
+              "type": "string"
+            },
+            {
+              "id": "assignment-6",
+              "name": "recommendation",
+              "value": "={{ $json.body.recommendation }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-2",
+      "name": "Prepare Alert Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [900, 480]
+    },
+    {
+      "parameters": {
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"text\": \"\\ud83d\\udea8 Health Alert Triggered\",\n  \"attachments\": [\n    {\n      \"color\": \"danger\",\n      \"fields\": [\n        {\n          \"title\": \"Alert Type\",\n          \"value\": \"{{ $json.alertType.replace('_', ' ').toUpperCase() }}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Value\",\n          \"value\": \"{{ $json.alertValue }}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Overall Health\",\n          \"value\": \"{{ $json.body.overallHealth }}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Camera Status\",\n          \"value\": \"Recording Started\",\n          \"short\": true\n        }\n      ],\n      \"actions\": [\n        {\n          \"type\": \"button\",\n          \"text\": \"View Camera Stream\",\n          \"url\": \"http://10.37.112.50:81/stream\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "slack-1",
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 600]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEach",
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-1",
+      "name": "Process Each Alert",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "webhook-1": {
+      "main": [
+        [
+          {
+            "node": "http-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http-1": {
+      "main": [
+        [
+          {
+            "node": "if-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-1": {
+      "main": [
+        [
+          {
+            "node": "set-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "camera-status-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set-1": {
+      "main": [
+        [
+          {
+            "node": "insights-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insights-1": {
+      "main": [
+        [
+          {
+            "node": "set-2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set-2": {
+      "main": [
+        [
+          {
+            "node": "camera-start-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "camera-start-1": {
+      "main": [
+        [
+          {
+            "node": "split-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split-1": {
+      "main": [
+        [
+          {
+            "node": "email-1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "telegram-1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "slack-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "esp32-camera-alert-automation",
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "tag-1",
+      "name": "health-monitoring"
+    },
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "tag-2",
+      "name": "camera-automation"
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calorie Detection - TrackyAI</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <!-- Base CSS (optional) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+  <style>
+    html,body{height:100%}
+    body{margin:0;background:#0a0f18;color:#e5e7eb;overflow:auto;font-family: 'Poppins', system-ui, -apple-system, sans-serif}
+    .stage{position:relative;min-height:100vh}
+    .bg{position:absolute;inset:0}
+    .bg-gradient{background: radial-gradient(1200px 600px at 20% 10%, #111827, #0b1220 55%, #0a0f18 85%)}
+    .bg-grid{background-image:linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);background-size:32px 32px,32px 32px;animation:g 30s linear infinite}
+    @keyframes g{to{background-position:512px 512px,512px 512px}}
+    .scan{background:repeating-linear-gradient(to bottom, rgba(255,255,255,.06), rgba(255,255,255,.06) 1px, transparent 3px);mix-blend-mode:overlay;opacity:.28}
+    .bg-blobs{position:absolute;inset:0;overflow:hidden}
+    .blob{position:absolute;width:42vmin;height:42vmin;filter:blur(40px);opacity:.35;border-radius:50%;mix-blend-mode:screen}
+    .blob.b1{background:#22d3ee;left:-10vmin;top:10vmin;animation:float1 18s ease-in-out infinite}
+    .blob.b2{background:#f59e0b;right:-12vmin;top:30vmin;animation:float2 22s ease-in-out infinite}
+    .blob.b3{background:#a78bfa;left:20vmin;bottom:-12vmin;animation:float3 20s ease-in-out infinite}
+    @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(10vmin,-6vmin)}}
+    @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-12vmin,8vmin)}}
+    @keyframes float3{0%,100%{transform:translate(0,0)}50%{transform:translate(8vmin,10vmin)}}
+    .bg-dots{position:absolute; inset:0; background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size: 18px 18px; opacity:.22}
+    .bg-vignette{position:absolute; inset:0; pointer-events:none; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,.35) 100%)}
+
+    .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto;padding:48px 20px}
+    .hero{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:22px;box-shadow:0 18px 48px rgba(0,0,0,.32);padding:28px;text-align:center}
+    .hero h1{margin:0 0 6px;font-size:36px;font-weight:1000}
+    .hero p{margin:0 0 16px;opacity:.9}
+    .upload-area{margin:16px auto}
+    .upload-btn{display:inline-block;padding:14px 18px;border-radius:14px;background:#16a34a;color:#fff;font-weight:900;box-shadow:0 12px 28px rgba(22,163,74,.35);text-decoration:none}
+    #spinner{margin-top:14px}
+    .result,.details{margin-top:16px;text-align:left}
+    .results-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-top:18px}
+    @media(max-width:900px){.results-grid{grid-template-columns:1fr}}
+    .panel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px}
+    .panel h3{margin:0 0 10px;font-size:18px;font-weight:900}
+    .list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+    .list li{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px}
+    .muted{opacity:.85}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bg bg-gradient"></div>
+    <div class="bg bg-grid"></div>
+    <div class="bg scan"></div>
+    <div class="bg-blobs">
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+    <div class="bg-dots"></div>
+    <div class="bg-vignette"></div>
+
+    <div class="wrap">
+      <div class="hero">
+        <h1>Calorie Detection</h1>
+        <p>Upload your meal to estimate its calories and macros instantly.</p>
+
+        <!-- Upload Section -->
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="image-input" accept="image/*" hidden />
+          <label for="image-input" class="upload-btn">📸 Upload Image</label>
+        </div>
+
+        <div style="margin-top:10px">
+          <a href="{{ url_for('realtime_page') }}" class="upload-btn" style="background:#2563eb; box-shadow:0 12px 28px rgba(37,99,235,.35)">🎥 Live Detection (YOLO)</a>
+        </div>
+
+        <!-- Spinner -->
+        <div id="spinner" style="display:none;">⏳ Analyzing your image...</div>
+
+        <!-- Results -->
+        <div id="calorie-count" class="result">Waiting for image...</div>
+        <div id="details" class="details"></div>
+        <div class="results-grid">
+          <div class="panel">
+            <h3>Detected Items</h3>
+            <ul id="items-col" class="list"></ul>
+          </div>
+          <div class="panel">
+            <h3>Nutrition Facts</h3>
+            <ul id="nutrition-col" class="list"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='js/script.js') }}?v=4"></script>
+</body>
+</html>

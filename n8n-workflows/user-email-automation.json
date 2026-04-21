@@ -1,0 +1,278 @@
+{
+  "name": "User Email Automation - CalAI",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "f8b4c2e1-7a3d-4b5e-9f8a-2c1d3e4f5a6b",
+      "name": "Every 6 Hours Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.id, u.email, u.name, u.profile->>'age' as age, u.profile->>'goal' as goal, u.profile->>'activity_level' as activity_level, COUNT(m.id) as meal_count_today FROM users u LEFT JOIN meals m ON u.id = m.user_id AND DATE(m.created_at) = CURRENT_DATE WHERE u.email IS NOT NULL AND u.email != '' GROUP BY u.id, u.email, u.name, u.profile->>'age', u.profile->>'goal', u.profile->>'activity_level'"
+      },
+      "id": "a3b2c1d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "name": "Get Users Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "local-postgres-calai",
+          "name": "Local PostgreSQL - CalAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "meal_count_condition",
+              "leftValue": "={{ $json.meal_count_today }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b4c3d2e1-f6a5-4b8c-9d7e-1f2a3b4c5d6e",
+      "name": "Check Meal Logging",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate personalized email content based on user data\nconst user = $input.first().json;\n\n// Email templates based on user goals\nconst emailTemplates = {\n  'weight_loss': {\n    subject: `Hi ${user.name || 'there'}! Missing meals today? Let's get back on track! 🥗`,\n    content: `Hello ${user.name || 'there'}!\n\nI noticed you haven't logged any meals yet today. Proper nutrition is key to reaching your weight loss goals!\n\nHere are some quick, healthy meal ideas:\n• Breakfast: Greek yogurt with berries and nuts (300 cal)\n• Lunch: Grilled chicken salad with mixed vegetables (350 cal)\n• Dinner: Baked fish with quinoa and steamed veggies (400 cal)\n\nRemember: Consistency is more important than perfection. Even one logged meal is better than none!\n\nClick here to log your meal now: [Your App Link]\n\nStay motivated! 💪\n\nYour CalAI Health Coach`\n  },\n  'muscle_gain': {\n    subject: `Hey ${user.name || 'there'}! Time to fuel those gains! 🏋️‍♂️`,\n    content: `Hello ${user.name || 'there'}!\n\nI see you haven't logged your meals today. Proper nutrition is crucial for muscle building and recovery!\n\nToday's protein-packed meal suggestions:\n• Breakfast: 4 eggs + whole wheat toast + protein shake (600 cal, 40g protein)\n• Lunch: Chicken breast + brown rice + broccoli (500 cal, 45g protein)\n• Dinner: Lean beef + sweet potatoes + asparagus (600 cal, 50g protein)\n\nDon't forget your post-workout nutrition! Aim for 1.6-2.2g protein per kg bodyweight daily.\n\nLog your meals here: [Your App Link]\n\nLet's build that strength! 🚀\n\nYour CalAI Health Coach`\n  },\n  'maintain': {\n    subject: `Hi ${user.name || 'there'}! Let's maintain that healthy balance! ⚖️`,\n    content: `Hello ${user.name || 'there'}!\n\nI noticed you haven't logged any meals today. Consistent meal tracking helps you maintain your current healthy weight and energy levels!\n\nBalanced meal ideas for today:\n• Breakfast: Oatmeal with fruits and almonds (400 cal)\n• Lunch: Turkey wrap with vegetables (450 cal)\n• Dinner: Stir-fried vegetables with tofu (400 cal)\n\nRegular meal logging helps you stay aware of your nutrition patterns and make better choices.\n\nLog your meals here: [Your App Link]\n\nKeep up the great work! 🌟\n\nYour CalAI Health Coach`\n  },\n  'default': {\n    subject: `Hi ${user.name || 'there'}! Don't forget to log your meals today! 📝`,\n    content: `Hello ${user.name || 'there'}!\n\nI noticed you haven't logged any meals yet today. Regular meal tracking is the foundation of good health management!\n\nQuick meal logging tips:\n• Even a rough estimate is better than nothing\n• Try to log within 30 minutes of eating\n• Include portion sizes when possible\n• Don't forget snacks and drinks!\n\nConsistent tracking helps me provide better personalized advice and track your progress.\n\nLog your meals now: [Your App Link]\n\nYour health journey matters! 💚\n\nYour CalAI Health Coach`\n  }\n};\n\n// Get user's goal or use default\nconst userGoal = user.goal || 'default';\nconst template = emailTemplates[userGoal] || emailTemplates['default'];\n\n// Personalize content\nconst personalizedContent = template.content\n  .replace(/\\[Your App Link\\]/g, 'https://your-app-url.com/meal-logging')\n  .replace(/\\$\\{name\\}/g, user.name || 'there');\n\nreturn [{\n  json: {\n    to: user.email,\n    subject: template.subject,\n    content: personalizedContent,\n    user_name: user.name,\n    user_goal: user.goal,\n    meal_count_today: user.meal_count_today\n  }\n}];"
+      },
+      "id": "c5d4e3f2-a7b6-4c9d-8e7f-2a3b4c5d6e7f",
+      "name": "Generate Email Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@calai.com",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.content }}",
+        "options": {
+          "attachments": []
+        }
+      },
+      "id": "d6e5f4a3-b8c7-4d9e-8f9a-3b4c5d6e7f8a",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1120,]
+        200
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-gmail-calai",
+          "name": "Gmail SMTP - CalAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "email_logs",
+        "columns": "user_id, email, subject, sent_at, status, meal_count_today",
+        "additionalFields": {
+          "returnFields": []
+        }
+      },
+      "id": "e7f6a5b4-c9d8-4eaf-9a0b-4c5d6e7f8a9b",
+      "name": "Log Email Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [
+        1340,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "local-postgres-calai",
+          "name": "Local PostgreSQL - CalAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "meal_count_positive",
+              "leftValue": "={{ $json.meal_count_today }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f8a7b6c5-d0e9-4bfa-9c1d-5d6e7f8a9b0c",
+      "name": "Check Active Users",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate positive reinforcement email for active users\nconst user = $input.first().json;\n\nconst positiveTemplates = {\n  'weight_loss': {\n    subject: `Great job today, ${user.name || 'there'}! Keep up the momentum! 🔥`,\n    content: `Hello ${user.name || 'there'}!\n\nFantastic work! You've logged ${user.meal_count_today} meal(s) today. That's exactly the kind of consistency that drives results!\n\nYour dedication to tracking shows you're serious about your weight loss goals. Here's why this matters:\n• You're building healthy habits that last\n• You're becoming more mindful of your food choices\n• You're creating accountability for yourself\n\nQuick tip: Try to include at least 20g of protein with each meal to stay full longer!\n\nKeep crushing it! 💪\n\nYour CalAI Health Coach`\n  },\n  'muscle_gain': {\n    subject: `Excellent fueling today, ${user.name || 'there'}! 💪`,\n    content: `Hello ${user.name || 'there'}!\n\nAwesome job logging ${user.meal_count_today} meal(s) today! Proper nutrition tracking is key to maximizing your muscle gains!\n\nYou're doing great because:\n• You're ensuring adequate protein intake\n• You're tracking your calorie surplus effectively\n• You're building the foundation for serious gains\n\nPro tip: Aim for 20-30g of protein every 3-4 hours for optimal muscle protein synthesis!\n\nLet's get stronger together! 🏋️‍♂️\n\nYour CalAI Health Coach`\n  },\n  'default': {\n    subject: `Well done today, ${user.name || 'there'}! 🌟`,\n    content: `Hello ${user.name || 'there'}!\n\nGreat job logging ${user.meal_count_today} meal(s) today! Consistent tracking is the foundation of health success!\n\nYou're building important habits:\n• Increased awareness of your eating patterns\n• Better portion control\n• Data for personalized health insights\n\nKeep up this excellent consistency. Every logged meal is a step toward better health!\n\nYour dedication inspires us! 🎯\n\nYour CalAI Health Coach`\n  }\n};\n\n// Only send positive emails every other day to avoid spam\nconst today = new Date().getDay();\nconst shouldSendPositive = today % 2 === 0; // Every other day\n\nif (!shouldSendPositive) {\n  return [];\n}\n\nconst userGoal = user.goal || 'default';\nconst template = positiveTemplates[userGoal] || positiveTemplates['default'];\n\nconst personalizedContent = template.content\n  .replace(/\\[Your App Link\\]/g, 'https://your-app-url.com/dashboard')\n  .replace(/\\$\\{name\\}/g, user.name || 'there');\n\nreturn [{\n  json: {\n    to: user.email,\n    subject: template.subject,\n    content: personalizedContent,\n    user_name: user.name,\n    user_goal: user.goal,\n    meal_count_today: user.meal_count_today\n  }\n}];"
+      },
+      "id": "a9b8c7d6-e1f0-4a2b-9c3d-6e7f8a9b0c1d",
+      "name": "Generate Positive Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Every 6 Hours Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Users Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Users Data": {
+      "main": [
+        [
+          {
+            "node": "Check Meal Logging",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Meal Logging": {
+      "main": [
+        [
+          {
+            "node": "Generate Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Log Email Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Active Users": {
+      "main": [
+        [
+          {
+            "node": "Generate Positive Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Positive Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

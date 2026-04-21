@@ -1,0 +1,1154 @@
+{% extends "base.html" %}
+
+{% block title %}Food Logging - Calorie App{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .main-container {
+        padding: 80px 20px 40px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 3rem;
+    }
+    
+    .page-header h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    .progress-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .progress-item {
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .progress-bar-custom {
+        height: 30px;
+        border-radius: 15px;
+        background-color: #e9ecef;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 15px;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .progress-fill::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    .progress-fill.calories {
+        background: linear-gradient(90deg, #28a745, #20c997);
+    }
+    
+    .progress-fill.protein {
+        background: linear-gradient(90deg, #dc3545, #fd7e14);
+    }
+    
+    .progress-fill.fats {
+        background: linear-gradient(90deg, #ffc107, #fd7e14);
+    }
+    
+    .progress-fill.carbs {
+        background: linear-gradient(90deg, #6f42c1, #e83e8c);
+    }
+    
+    .search-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 2rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .search-section:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .food-item {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+    }
+    
+    .food-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border-color: #4e73df;
+    }
+    
+    .food-item.selected {
+        border: 2px solid #4e73df;
+        background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+        transform: scale(1.02);
+    }
+    
+    .meals-table {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 2rem;
+    }
+    
+    .table-custom {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .table-custom thead {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+    
+    .table-custom tbody tr {
+        transition: all 0.3s ease;
+    }
+    
+    .table-custom tbody tr:hover {
+        background-color: #f8f9ff;
+        transform: scale(1.01);
+    }
+    
+    .weekly-chart {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-top: 2rem;
+    }
+    
+    .day-progress {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 15px;
+        background: #f8f9fa;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .day-progress:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .day-progress.good {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        border-color: #28a745;
+    }
+    
+    .day-progress.warning {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border-color: #ffc107;
+    }
+    
+    .day-progress.danger {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        border-color: #dc3545;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        border-color: #4e73df;
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #4e73df;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #4e73df;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .back-link {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .back-link:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .btn {
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 12px 24px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 12px 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .alert {
+        border-radius: 15px;
+        border: none;
+        padding: 1rem 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .main-container {
+            padding: 60px 10px 20px;
+            margin: 0;
+            max-width: 100%;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .page-header p {
+            font-size: 0.9rem;
+        }
+        
+        .progress-section,
+        .search-section,
+        .meals-table,
+        .weekly-chart {
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stats-card {
+            padding: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+        }
+        
+        .progress-bar-custom {
+            height: 25px;
+        }
+        
+        .food-item {
+            padding: 1rem;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .form-control {
+            padding: 10px 12px;
+        }
+        
+        .table-custom {
+            font-size: 0.85rem;
+        }
+        
+        .alert {
+            padding: 0.8rem 1rem;
+            font-size: 0.9rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .main-container {
+            padding: 50px 5px 15px;
+        }
+        
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .progress-section,
+        .search-section,
+        .meals-table,
+        .weekly-chart {
+            padding: 1rem;
+            border-radius: 15px;
+        }
+        
+        .stats-card {
+            padding: 1rem;
+        }
+        
+        .stats-number {
+            font-size: 1.8rem;
+        }
+        
+        .progress-bar-custom {
+            height: 20px;
+        }
+        
+        .food-item {
+            padding: 0.8rem;
+        }
+        
+        .btn {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+        
+        .form-control {
+            padding: 8px 10px;
+            font-size: 0.85rem;
+        }
+        
+        .table-custom {
+            font-size: 0.8rem;
+        }
+        
+        .alert {
+            padding: 0.6rem 0.8rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+
+<div class="main-container">
+    <div class="page-header fade-in">
+        <h1>🍽️ Food Logging & Nutrition Tracking</h1>
+        <p class="lead">Track your meals, monitor progress, and achieve your fitness goals</p>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress-section">
+                <h3 class="mb-4">Today's Nutrition Progress</h3>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalCalories">0</div>
+                            <div class="stats-label">Calories</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalProtein">0g</div>
+                            <div class="stats-label">Protein</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalFats">0g</div>
+                            <div class="stats-label">Fats</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalCarbs">0g</div>
+                            <div class="stats-label">Carbs</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🔥 Calories</span>
+                                <span id="caloriesProgress">0 / 2000</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill calories" id="caloriesBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🥩 Protein</span>
+                                <span id="proteinProgress">0g / 50g</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill protein" id="proteinBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🥑 Fats</span>
+                                <span id="fatsProgress">0g / 65g</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill fats" id="fatsBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>🍞 Carbs</span>
+                                <span id="carbsProgress">0g / 250g</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill carbs" id="carbsBar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Add Food Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="search-section">
+                <h4 class="mb-3">🔍 Search Food</h4>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="foodSearch" placeholder="Search for food...">
+                    <button class="btn btn-primary" type="button" id="searchBtn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                
+                <div id="searchResults" class="food-results">
+                    <!-- Search results will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Selected Food Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="search-section">
+                <h4 class="mb-3">➕ Add Selected Food</h4>
+                <div id="selectedFood" class="mb-3">
+                    <p class="text-muted">Select a food from search results to add it</p>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input type="number" class="form-control" id="quantity" placeholder="Quantity" value="1" step="0.1" min="0.1">
+                    <input type="text" class="form-control" id="mealType" placeholder="Meal type" value="snack">
+                    <button class="btn btn-success" type="button" id="addFoodBtn" disabled>
+                        <i class="fas fa-plus"></i> Add Food
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="search-section">
+                <h4 class="mb-3">📊 Today's Summary</h4>
+                <div id="calorieSummary" class="mb-3">
+                    <div class="alert alert-info">
+                        <h6>Calories from Detection: <span id="detectedCalories">0</span> kcal</h6>
+                        <small>From dashboard calorie detection scans</small>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <strong>Remaining Calories:</strong> <span id="remainingCalories">0</span> kcal
+                    <div class="progress mt-2" style="height: 10px;">
+                        <div class="progress-bar" id="remainingBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <button class="btn btn-primary w-100" type="button" id="importDetectedBtn">
+                        <i class="fas fa-download"></i> Import Detected Foods to Meals
+                    </button>
+                    <small class="text-muted d-block mt-1">Import foods detected in dashboard to your meal log</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Meals Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="meals-table">
+                <h4 class="mb-3">📋 Today's Meals</h4>
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Food</th>
+                                <th>Brand</th>
+                                <th>Quantity</th>
+                                <th>Calories</th>
+                                <th>Protein</th>
+                                <th>Fats</th>
+                                <th>Carbs</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mealsTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">No meals logged today</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Progress Chart -->
+    <div class="row">
+        <div class="col-12">
+            <div class="weekly-chart">
+                <h4 class="mb-3">📈 Weekly Progress</h4>
+                <div class="row" id="weeklyProgress">
+                    <!-- Weekly progress will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedFoodItem = null;
+    let dailyTargets = { calories: 2000, protein_g: 50, fat_g: 65, carbs_g: 250 };
+    let detectedCalories = 0;
+
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDailyProgress();
+        loadWeeklyProgress();
+        loadDetectedCalories();
+        setupRealTimeUpdates();
+    });
+
+    // Load calories from dashboard detection
+    async function loadDetectedCalories() {
+        try {
+            const response = await fetch('/api/daily_progress');
+            const data = await response.json();
+            
+            if (response.ok && data.detected_calories) {
+                detectedCalories = data.detected_calories;
+                updateCalorieSummary();
+            }
+        } catch (error) {
+            console.error('Error loading detected calories:', error);
+        }
+    }
+
+    // Update calorie summary display
+    function updateCalorieSummary() {
+        const detectedCaloriesEl = document.getElementById('detectedCalories');
+        const remainingCaloriesEl = document.getElementById('remainingCalories');
+        const remainingBar = document.getElementById('remainingBar');
+        
+        if (detectedCaloriesEl) {
+            detectedCaloriesEl.textContent = Math.round(detectedCalories);
+        }
+        
+        const consumed = getCurrentConsumed();
+        const remaining = dailyTargets.calories - consumed - detectedCalories;
+        const remainingPercent = Math.max(0, (remaining / dailyTargets.calories) * 100);
+        
+        if (remainingCaloriesEl) {
+            remainingCaloriesEl.textContent = Math.round(remaining);
+        }
+        
+        if (remainingBar) {
+            remainingBar.style.width = remainingPercent + '%';
+            
+            // Change color based on remaining calories
+            if (remainingPercent <= 10) {
+                remainingBar.className = 'progress-bar bg-danger';
+            } else if (remainingPercent <= 30) {
+                remainingBar.className = 'progress-bar bg-warning';
+            } else {
+                remainingBar.className = 'progress-bar bg-success';
+            }
+        }
+    }
+
+    // Get current consumed calories from progress bars
+    function getCurrentConsumed() {
+        const caloriesBar = document.getElementById('caloriesBar');
+        if (!caloriesBar) return 0;
+        
+        const width = parseFloat(caloriesBar.style.width) || 0;
+        return (width / 100) * dailyTargets.calories;
+    }
+
+    // Setup real-time updates
+    function setupRealTimeUpdates() {
+        // Update every 30 seconds
+        setInterval(() => {
+            loadDailyProgress();
+            loadDetectedCalories();
+        }, 30000);
+        
+        // Listen for visibility changes to update when tab becomes active
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                loadDailyProgress();
+                loadDetectedCalories();
+            }
+        });
+    }
+
+    // Import detected foods to meals
+    document.getElementById('importDetectedBtn').addEventListener('click', importDetectedFoods);
+
+    async function importDetectedFoods() {
+        const importBtn = document.getElementById('importDetectedBtn');
+        const originalText = importBtn.innerHTML;
+        
+        // Show loading state
+        importBtn.innerHTML = '<span class="loading-spinner"></span> Importing...';
+        importBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/api/log_detected_foods_to_meals', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Reload data with animation
+                await loadDailyProgress();
+                await loadWeeklyProgress();
+                updateCalorieSummary();
+                
+                // Show success message
+                showAlert(`✅ ${data.message}`, 'success');
+                
+                // Pulse the progress bars
+                pulseProgressBars();
+                
+                // Disable button if no more detected foods
+                if (data.meals_logged === 0) {
+                    importBtn.innerHTML = '<i class="fas fa-check"></i> All Foods Imported';
+                    importBtn.classList.remove('btn-primary');
+                    importBtn.classList.add('btn-success');
+                }
+            } else {
+                showAlert('Failed to import detected foods: ' + (data.error || 'Unknown error'), 'danger');
+            }
+        } catch (error) {
+            console.error('Error importing detected foods:', error);
+            showAlert('Failed to import detected foods', 'danger');
+        } finally {
+            // Reset button if not all imported
+            if (!importBtn.classList.contains('btn-success')) {
+                importBtn.innerHTML = originalText;
+                importBtn.disabled = false;
+            }
+        }
+    }
+
+    // Search food
+    document.getElementById('searchBtn').addEventListener('click', searchFood);
+    document.getElementById('foodSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchFood();
+        }
+    });
+
+    async function searchFood() {
+        const query = document.getElementById('foodSearch').value.trim();
+        if (!query) return;
+
+        // Show loading state
+        const searchBtn = document.getElementById('searchBtn');
+        const originalText = searchBtn.innerHTML;
+        searchBtn.innerHTML = '<span class="loading-spinner"></span> Searching...';
+        searchBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/search_food', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: query })
+            });
+
+            const data = await response.json();
+            displaySearchResults(data.foods || []);
+        } catch (error) {
+            console.error('Error searching food:', error);
+            showAlert('Failed to search food', 'danger');
+        } finally {
+            // Reset button
+            searchBtn.innerHTML = originalText;
+            searchBtn.disabled = false;
+        }
+    }
+
+    function displaySearchResults(foods) {
+        const resultsDiv = document.getElementById('searchResults');
+        
+        if (foods.length === 0) {
+            resultsDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No foods found. Try a different search term.</div>';
+            return;
+        }
+
+        resultsDiv.innerHTML = foods.map((food, index) => `
+            <div class="food-item fade-in" style="animation-delay: ${index * 0.1}s" onclick="selectFood(${food.id}, '${food.name}', '${food.brand || ''}', ${food.calories}, ${food.protein_g}, ${food.fat_g}, ${food.carbs_g}, ${food.serving_qty || 1}, '${food.serving_unit || 'serving'}')">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${food.name}</h6>
+                        <small class="text-muted">${food.brand || 'Generic'}</small>
+                    </div>
+                    <div class="text-end">
+                        <strong>${food.calories} cal</strong>
+                        <div class="small text-muted">
+                            P: ${food.protein_g}g | F: ${food.fat_g}g | C: ${food.carbs_g}g
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function selectFood(id, name, brand, calories, protein, fats, carbs, servingQty, servingUnit) {
+        selectedFoodItem = {
+            id: id,
+            name: name,
+            brand: brand,
+            calories: calories,
+            protein: protein,
+            fats: fats,
+            carbs: carbs,
+            serving_qty: servingQty,
+            serving_unit: servingUnit
+        };
+
+        // Update UI
+        document.querySelectorAll('.food-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        event.currentTarget.classList.add('selected');
+
+        // Update selected food display
+        document.getElementById('selectedFood').innerHTML = `
+            <div class="alert alert-success fade-in">
+                <h6><i class="fas fa-check-circle"></i> ${name}</h6>
+                <small>${brand || 'Generic'} - ${calories} cal per ${servingQty} ${servingUnit}</small>
+                <div class="mt-2">
+                    <small>Protein: ${protein}g | Fats: ${fats}g | Carbs: ${carbs}g</small>
+                </div>
+            </div>
+        `;
+
+        // Enable add button
+        document.getElementById('addFoodBtn').disabled = false;
+    }
+
+    // Add food
+    document.getElementById('addFoodBtn').addEventListener('click', addFood);
+
+    async function addFood() {
+        if (!selectedFoodItem) return;
+
+        const quantity = parseFloat(document.getElementById('quantity').value);
+        const mealType = document.getElementById('mealType').value;
+
+        if (!quantity || quantity <= 0) {
+            showAlert('Please enter a valid quantity', 'warning');
+            return;
+        }
+
+        // Show loading state
+        const addBtn = document.getElementById('addFoodBtn');
+        const originalText = addBtn.innerHTML;
+        addBtn.innerHTML = '<span class="loading-spinner"></span> Adding...';
+        addBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/log_food', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    food_id: selectedFoodItem.id,
+                    quantity: quantity,
+                    meal_type: mealType
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Clear selection
+                selectedFoodItem = null;
+                document.getElementById('selectedFood').innerHTML = '<p class="text-muted">Select a food from search results to add it</p>';
+                document.getElementById('addFoodBtn').disabled = true;
+                document.getElementById('quantity').value = '1';
+                document.getElementById('foodSearch').value = '';
+                document.getElementById('searchResults').innerHTML = '';
+
+                // Reload data with animation
+                await loadDailyProgress();
+                updateCalorieSummary();
+                
+                // Show success message with animation
+                showAlert(`✅ ${data.food_name} added successfully!`, 'success');
+                
+                // Pulse the progress bars
+                pulseProgressBars();
+            } else {
+                showAlert('Failed to add food: ' + data.error, 'danger');
+            }
+        } catch (error) {
+            console.error('Error adding food:', error);
+            showAlert('Failed to add food', 'danger');
+        } finally {
+            // Reset button
+            addBtn.innerHTML = originalText;
+            addBtn.disabled = false;
+        }
+    }
+
+    // Show alert message
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show fade-in`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at the top of the main container
+        const container = document.querySelector('.main-container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // Pulse progress bars animation
+    function pulseProgressBars() {
+        const progressBars = document.querySelectorAll('.progress-fill');
+        progressBars.forEach(bar => {
+            bar.classList.add('pulse-animation');
+            setTimeout(() => {
+                bar.classList.remove('pulse-animation');
+            }, 2000);
+        });
+    }
+
+    async function loadDailyProgress() {
+        try {
+            const response = await fetch('/api/daily_progress');
+            const data = await response.json();
+
+            if (response.ok) {
+                updateProgressBars(data);
+                updateMealsTable(data.meals || []);
+                dailyTargets = data.targets;
+                updateCalorieSummary();
+            }
+        } catch (error) {
+            console.error('Error loading daily progress:', error);
+        }
+    }
+
+    function updateProgressBars(data) {
+        const targets = data.targets;
+        const consumed = data.consumed;
+        const percentages = data.percentages;
+
+        // Update stats with animation
+        animateValue('totalCalories', 0, Math.round(consumed.calories), 1000);
+        animateValue('totalProtein', 0, Math.round(consumed.protein_g), 1000, 'g');
+        animateValue('totalFats', 0, Math.round(consumed.fat_g), 1000, 'g');
+        animateValue('totalCarbs', 0, Math.round(consumed.carbs_g), 1000, 'g');
+
+        // Update progress bars with smooth animation
+        setTimeout(() => {
+            updateProgressBar('calories', consumed.calories, targets.calories, percentages.calories);
+            updateProgressBar('protein', consumed.protein_g, targets.protein_g, percentages.protein_g);
+            updateProgressBar('fats', consumed.fat_g, targets.fat_g, percentages.fat_g);
+            updateProgressBar('carbs', consumed.carbs_g, targets.carbs_g, percentages.carbs_g);
+        }, 500);
+    }
+
+    // Animate numeric values
+    function animateValue(id, start, end, duration, suffix = '') {
+        const element = document.getElementById(id);
+        if (!element) return;
+        
+        const range = end - start;
+        const increment = range / (duration / 16);
+        let current = start;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                current = end;
+                clearInterval(timer);
+            }
+            element.textContent = Math.round(current) + suffix;
+        }, 16);
+    }
+
+    function updateProgressBar(macro, consumed, target, percentage) {
+        const bar = document.getElementById(macro + 'Bar');
+        const progress = document.getElementById(macro + 'Progress');
+        
+        if (!bar || !progress) return;
+        
+        bar.style.width = Math.min(percentage, 100) + '%';
+        bar.textContent = Math.round(percentage) + '%';
+        
+        if (macro === 'calories') {
+            progress.textContent = `${Math.round(consumed)} / ${Math.round(target)}`;
+        } else {
+            progress.textContent = `${Math.round(consumed)}g / ${Math.round(target)}g`;
+        }
+
+        // Change color based on progress
+        if (percentage >= 100) {
+            bar.style.background = 'linear-gradient(90deg, #dc3545, #c82333)';
+        } else if (percentage >= 80) {
+            bar.style.background = 'linear-gradient(90deg, #ffc107, #e0a800)';
+        } else {
+            // Keep original gradient colors
+        }
+    }
+
+    function updateMealsTable(meals) {
+        const tbody = document.getElementById('mealsTableBody');
+        
+        if (!tbody) return;
+        
+        if (meals.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No meals logged today</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = meals.map((meal, index) => `
+            <tr class="fade-in" style="animation-delay: ${index * 0.1}s">
+                <td>${new Date(meal.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                <td><strong>${meal.food_name}</strong></td>
+                <td>${meal.brand || '-'}</td>
+                <td>${meal.quantity} ${meal.portion_text}</td>
+                <td><strong class="text-success">${Math.round(meal.calories)}</strong></td>
+                <td>${meal.protein_g}g</td>
+                <td>${meal.fat_g}g</td>
+                <td>${meal.carbs_g}g</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMeal(${meal.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function deleteMeal(mealId) {
+        if (!confirm('Are you sure you want to delete this meal?')) return;
+
+        try {
+            // Note: You'll need to implement the delete endpoint
+            // For now, just reload the data
+            await loadDailyProgress();
+            await loadWeeklyProgress();
+            updateCalorieSummary();
+            showAlert('Meal deleted successfully', 'info');
+        } catch (error) {
+            console.error('Error deleting meal:', error);
+        }
+    }
+
+    async function loadWeeklyProgress() {
+        try {
+            const response = await fetch('/api/weekly_progress');
+            const data = await response.json();
+
+            if (response.ok) {
+                displayWeeklyProgress(data.weekly_data || []);
+            }
+        } catch (error) {
+            console.error('Error loading weekly progress:', error);
+        }
+    }
+
+    function displayWeeklyProgress(weeklyData) {
+        const container = document.getElementById('weeklyProgress');
+        
+        if (!container) return;
+        
+        container.innerHTML = weeklyData.map((day, index) => {
+            const caloriesPercent = (day.consumed.calories / day.targets.calories * 100) || 0;
+            let statusClass = 'good';
+            let statusText = 'Great!';
+            
+            if (caloriesPercent < 80) {
+                statusClass = 'warning';
+                statusText = 'Low';
+            } else if (caloriesPercent > 120) {
+                statusClass = 'danger';
+                statusText = 'High';
+            }
+
+            return `
+                <div class="col-md fade-in" style="animation-delay: ${index * 0.1}s">
+                    <div class="day-progress ${statusClass}">
+                        <h6>${day.day_name}</h6>
+                        <div class="small">${Math.round(day.consumed.calories)} / ${Math.round(day.targets.calories)} cal</div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar" style="width: ${Math.min(caloriesPercent, 100)}%"></div>
+                        </div>
+                        <div class="small mt-1">${statusText} (${day.meals_logged} meals)</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+</script>
+{% endblock %}

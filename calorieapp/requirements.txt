@@ -1,0 +1,12 @@
+openai
+flask
+python-dotenv
+gunicorn
+flask-login
+flask-sqlalchemy
+flask-migrate
+ultralytics
+opencv-python
+numpy
+scikit-learn
+chromadb

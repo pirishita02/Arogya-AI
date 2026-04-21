@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* ===== GLOBAL ===== */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+      color: white;
+      background: linear-gradient(135deg, #0d1b2a, #000);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-shadow: 0 0 20px rgba(0,255,255,0.5);
+    }
+
+    .logout-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    /* ===== TODAY'S NUTRITION BAR ===== */
+    .nutrition-bar {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .nutrition-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #00ffff;
+    }
+
+    .nutrition-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .nutrition-item {
+      text-align: center;
+    }
+
+    .nutrition-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 5px;
+    }
+
+    .nutrition-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #00ffff;
+    }
+
+    .nutrition-unit {
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ffff, #00ff00);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* ===== WEEKLY REVIEW ===== */
+    .weekly-review {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #00ffff;
+    }
+
+    .weekly-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #00ff00;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: 5px;
+    }
+
+    /* ===== AI NUTRITION ANALYSIS ===== */
+    .ai-analysis {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .ai-content {
+      background: rgba(0,255,255,0.1);
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 15px;
+      border-left: 4px solid #00ffff;
+    }
+
+    .ai-suggestion {
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    /* ===== FEATURE GRID ===== */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .feature-card {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: white;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,255,255,0.3);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+    }
+
+    .feature-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .feature-desc {
+      opacity: 0.8;
+      font-size: 0.9rem;
+    }
+
+    /* ===== LOADING ===== */
+    .loading {
+      text-align: center;
+      padding: 20px;
+      opacity: 0.7;
+    }
+
+    .spinner {
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top: 2px solid #00ffff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🍽️ Nutrition Dashboard</h1>
+      <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+
+    <!-- Today's Nutrition Bar -->
+    <div class="nutrition-bar">
+      <h2 class="nutrition-title">Today's Nutrition</h2>
+      <div id="today-nutrition" class="nutrition-grid">
+        <div class="nutrition-item">
+          <div class="nutrition-label">Calories</div>
+          <div class="nutrition-value">{{ daily_progress.consumed_calories or 0 }}<span class="nutrition-unit">/{{ daily_progress.target_calories or 2000 }}</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill calories-progress"></div>
+          </div>
+        </div>
+        <div class="nutrition-item">
+          <div class="nutrition-label">Protein</div>
+          <div class="nutrition-value">{{ daily_progress.consumed_protein_g or 0 }}<span class="nutrition-unit">g</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill protein-progress"></div>
+          </div>
+        </div>
+        <div class="nutrition-item">
+          <div class="nutrition-label">Carbs</div>
+          <div class="nutrition-value">{{ daily_progress.consumed_carbs_g or 0 }}<span class="nutrition-unit">g</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill carbs-progress"></div>
+          </div>
+        </div>
+        <div class="nutrition-item">
+          <div class="nutrition-label">Fat</div>
+          <div class="nutrition-value">{{ daily_progress.consumed_fat_g or 0 }}<span class="nutrition-unit">g</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill fat-progress"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly Review -->
+    <div class="weekly-review">
+      <h2 class="section-title">📊 Weekly Review</h2>
+      <div id="weekly-stats" class="weekly-stats">
+        {% if weekly_data and weekly_data|length > 0 %}
+          {% set total_weekly_calories = weekly_data|sum(attribute='calories') %}
+          {% set avg_calories = (total_weekly_calories / (weekly_data|length))|round|int %}
+          {% set total_meals = weekly_data|sum(attribute='meals_logged') %}
+          
+          <div class="stat-card">
+            <div class="stat-value">{{ avg_calories }}</div>
+            <div class="stat-label">Avg Daily Calories</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ daily_progress.consumed_protein_g or 0 }}g</div>
+            <div class="stat-label">Today's Protein</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ daily_progress.consumed_carbs_g or 0 }}g</div>
+            <div class="stat-label">Today's Carbs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ daily_progress.consumed_fat_g or 0 }}g</div>
+            <div class="stat-label">Today's Fat</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ total_meals }}</div>
+            <div class="stat-label">Meals Logged This Week</div>
+          </div>
+        {% else %}
+          <p>No weekly data available yet. Start logging meals to see your progress!</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- AI Nutrition Analysis -->
+    <div class="ai-analysis">
+      <h2 class="section-title">🤖 AI Nutrition Analysis</h2>
+      <div id="ai-analysis-content">
+        <div class="ai-content">
+          <div class="ai-suggestion">🎯 <strong>Today's Performance:</strong> You've consumed {{ daily_progress.consumed_calories or 0 }} calories out of your {{ daily_progress.target_calories or 2000 }} goal.</div>
+          <div class="ai-suggestion">💪 <strong>Protein Intake:</strong> {{ daily_progress.consumed_protein_g or 0 }}g consumed. {% if (daily_progress.consumed_protein_g or 0) >= (daily_progress.target_protein_g or 50) %}Great job meeting your protein goal!{% else %}Consider adding more protein-rich foods.{% endif %}</div>
+          <div class="ai-suggestion">🥗 <strong>Nutrition Balance:</strong> 
+            {% if (daily_progress.consumed_protein_g or 0) < 30 %}Increase protein intake for better muscle maintenance and satiety.
+            {% elif (daily_progress.consumed_carbs_g or 0) < 100 %}Add complex carbs for sustained energy throughout the day.
+            {% elif (daily_progress.consumed_fat_g or 0) < 20 %}Include healthy fats for hormone production and nutrient absorption.
+            {% else %}Your macronutrient balance looks good!
+            {% endif %}
+          </div>
+          <div class="ai-suggestion">🎯 <strong>Recommendation:</strong> 
+            {% if (daily_progress.consumed_calories or 0) < (daily_progress.target_calories or 2000) * 0.8 %}Add a balanced meal with lean protein and complex carbs.
+            {% elif (daily_progress.consumed_calories or 0) > (daily_progress.target_calories or 2000) %}Focus on lighter meals and increase physical activity tomorrow.
+            {% else %}Maintain this balanced approach and stay hydrated!
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Grid -->
+    <div class="feature-grid">
+      <a href="{{ url_for('calories_page') }}" class="feature-card">
+        <div class="feature-icon">📸</div>
+        <div class="feature-title">Calorie Detection</div>
+        <div class="feature-desc">Upload food photos for instant calorie analysis</div>
+      </a>
+
+      <a href="{{ url_for('food') }}" class="feature-card">
+        <div class="feature-icon">🍽️</div>
+        <div class="feature-title">Food Logging</div>
+        <div class="feature-desc">Track meals and monitor daily nutrition</div>
+      </a>
+
+      <a href="{{ url_for('realtime_page') }}" class="feature-card">
+        <div class="feature-icon">📹</div>
+        <div class="feature-title">Real-time Detection</div>
+        <div class="feature-desc">Live food detection with your webcam</div>
+      </a>
+
+      <a href="{{ url_for('rag_chat') }}" class="feature-card">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">AI Nutrition Chat</div>
+        <div class="feature-desc">Get personalized nutrition advice</div>
+      </a>
+
+      <a href="{{ url_for('exercise') }}" class="feature-card">
+        <div class="feature-icon">💪</div>
+        <div class="feature-title">Exercise Teller</div>
+        <div class="feature-desc">AI-powered workout recommendations</div>
+      </a>
+
+      <a href="{{ url_for('body_analysis') }}" class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Body Analysis</div>
+        <div class="feature-desc">Advanced body composition analysis</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

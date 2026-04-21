@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Detection (YOLO)</title>
+  <style>
+    html,body{height:100%}
+    body{margin:0; background:#0a0f18; color:#e5e7eb; font-family: system-ui, -apple-system, sans-serif; display:flex; flex-direction:column}
+    header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px}
+    .cta{color:#fff; text-decoration:none; background:#2563eb; padding:10px 14px; border-radius:999px; font-weight:800;}
+    .wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:18px; gap:18px; flex-wrap:wrap}
+    .panel{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px}
+    video, img{max-width:100%; height:auto; border-radius:12px; display:block}
+    .btn{cursor:pointer; border:none; padding:10px 14px; border-radius:999px; font-weight:800}
+    .btn.primary{background:#10b981; color:#fff}
+    .note{opacity:.85; font-size:14px; margin-top:8px}
+    .results{max-width:640px}
+    .results-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-top:12px}
+    @media(max-width:900px){.results-grid{grid-template-columns:1fr}}
+    .list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+    .list li{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px}
+    .muted{opacity:.85}
+  </style>
+</head>
+<body>
+  <header>
+    <h2 style="margin:0">Live Detection (YOLO)</h2>
+    <a class="cta" href="{{ url_for('calories_page') }}">↩ Back to Calorie Detection</a>
+  </header>
+  <div class="wrap">
+    <div class="panel" style="max-width:720px">
+      <img id="yoloStream" src="{{ url_for('realtime_feed') }}" alt="Live YOLO stream" />
+      <div class="note">If the stream does not appear, ensure camera permissions are allowed and the model has finished downloading.</div>
+      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
+        <button id="analyzeFrame" class="btn primary">Analyze This Frame</button>
+        <span id="analyzeStatus" class="note"></span>
+      </div>
+      <div id="rtSpinner" class="note" style="display:none; margin-top:8px">⏳ Analyzing...</div>
+      <div class="results">
+        <div id="rtTotal" class="note" style="margin-top:8px">Waiting for analysis...</div>
+        <div class="results-grid">
+          <div class="panel">
+            <h3 style="margin-top:0">Detected Items</h3>
+            <ul id="rtItems" class="list"></ul>
+          </div>
+          <div class="panel">
+            <h3 style="margin-top:0">Nutrition Facts</h3>
+            <ul id="rtNutri" class="list"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="max-width:520px">
+      <h3 style="margin-top:0">Enable Browser Camera (Popup)</h3>
+      <p class="note">Click to allow camera access from your browser. This also helps macOS show the permission dialog.</p>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <button id="enableCam" class="btn primary">Enable Camera</button>
+        <span id="camStatus" class="note"></span>
+      </div>
+      <video id="localPreview" autoplay playsinline muted style="margin-top:10px; width:320px; display:none"></video>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('enableCam');
+    const statusEl = document.getElementById('camStatus');
+    const preview = document.getElementById('localPreview');
+    const analyzeBtn = document.getElementById('analyzeFrame');
+    const yoloImg = document.getElementById('yoloStream');
+    const rtSpinner = document.getElementById('rtSpinner');
+    const rtTotal = document.getElementById('rtTotal');
+    const rtItems = document.getElementById('rtItems');
+    const rtNutri = document.getElementById('rtNutri');
+
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        statusEl.textContent = '';
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            statusEl.textContent = 'Camera API not supported by this browser.';
+            return;
+          }
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          preview.srcObject = stream;
+          preview.style.display = 'block';
+          statusEl.textContent = 'Camera enabled in browser.';
+        } catch (e) {
+          statusEl.textContent = 'Permission denied or camera in use.';
+        }
+      });
+    }
+
+    if (analyzeBtn) {
+      analyzeBtn.addEventListener('click', async () => {
+        rtSpinner.style.display = 'block';
+        rtTotal.textContent = '';
+        rtItems.innerHTML = '';
+        rtNutri.innerHTML = '';
+        try {
+          const blob = await captureFrameBlob();
+          const fd = new FormData();
+          fd.append('image', blob, 'frame.jpg');
+          const res = await fetch('/upload', { method: 'POST', body: fd });
+          const data = await res.json();
+          renderAnalysis(data);
+        } catch (e) {
+          rtTotal.textContent = '⚠️ Failed to analyze frame.';
+        } finally {
+          rtSpinner.style.display = 'none';
+        }
+      });
+    }
+
+    async function captureFrameBlob() {
+      // Prefer browser preview video (no CORS issues)
+      let sourceEl = null;
+      if (preview && preview.srcObject) sourceEl = preview;
+      else if (yoloImg && yoloImg.complete) sourceEl = yoloImg;
+      if (!sourceEl) throw new Error('No source to capture');
+      const w = sourceEl.videoWidth || sourceEl.naturalWidth || 640;
+      const h = sourceEl.videoHeight || sourceEl.naturalHeight || 480;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(sourceEl, 0, 0, w, h);
+      return await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    }
+
+    function renderAnalysis(data) {
+      if (!data || data.error) {
+        rtTotal.textContent = '❌ ' + (data && data.error ? data.error : 'Unknown error');
+        return;
+      }
+      const payload = data.calories || data;
+      const total = safeNumber(payload.total) ?? 0;
+      const foods = Array.isArray(payload.food_items) ? payload.food_items : (Array.isArray(payload.items) ? payload.items : []);
+      const nutrition = payload.nutrition || {};
+      rtTotal.textContent = Math.round(total) + ' calories 🍽️';
+      // items
+      if (foods.length === 0) rtItems.innerHTML = '<li class="muted">No items detected</li>';
+      else {
+        foods.forEach(f => {
+          const name = f.name || f.label || 'Item';
+          const cals = f.calories != null ? Math.round(Number(f.calories)) : null;
+          const acc = f.confidence != null ? ' · ' + Math.round(Number(f.confidence) * 100) + '%' : (f.accuracy != null ? ' · ' + Math.round(Number(f.accuracy)) + '%' : '');
+          const li = document.createElement('li');
+          li.innerHTML = '<span>' + escapeHtml(name) + acc + '</span><strong>' + (cals != null ? cals + ' kcal' : '') + '</strong>';
+          rtItems.appendChild(li);
+        });
+      }
+      // nutrition
+      const facts = buildNutritionFacts(nutrition, total);
+      facts.forEach(([label, value]) => {
+        const li = document.createElement('li');
+        li.innerHTML = '<span>' + label + '</span><strong>' + value + '</strong>';
+        rtNutri.appendChild(li);
+      });
+    }
+
+    function safeNumber(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+    function buildNutritionFacts(nutrition, fallbackCalories){
+      const rows = [];
+      const energy = safeNumber(nutrition.calories) ?? fallbackCalories ?? 0;
+      rows.push(['Calories', Math.round(energy) + ' kcal']);
+      if (nutrition.protein_g != null) rows.push(['Protein', Math.round(Number(nutrition.protein_g)) + ' g']);
+      if (nutrition.carbs_g != null) rows.push(['Carbs', Math.round(Number(nutrition.carbs_g)) + ' g']);
+      if (nutrition.fat_g != null) rows.push(['Fat', Math.round(Number(nutrition.fat_g)) + ' g']);
+      if (nutrition.fiber_g != null) rows.push(['Fiber', Math.round(Number(nutrition.fiber_g)) + ' g']);
+      if (nutrition.sugar_g != null) rows.push(['Sugar', Math.round(Number(nutrition.sugar_g)) + ' g']);
+      if (nutrition.sodium_mg != null) rows.push(['Sodium', Math.round(Number(nutrition.sodium_mg)) + ' mg']);
+      if (rows.length === 1) rows.push(['Protein','—'],['Carbs','—'],['Fat','—']);
+      return rows;
+    }
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+    }
+  </script>
+</body>
+</html>
