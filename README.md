@@ -1,4 +1,4 @@
-# 🚀 ArogyaAI (CalAI) – AI-Powered Health & Nutrition Platform
+# 🚀 ArogyaAI – AI-Powered Health & Nutrition Platform
 
 ArogyaAI is a comprehensive AI-driven health ecosystem that combines **computer vision, IoT, and intelligent automation** to deliver personalized nutrition, fitness, and real-time health insights.
 
@@ -6,7 +6,7 @@ It transforms traditional health tracking into a **proactive, data-driven decisi
 
 ---
 
-# 🌟 Overview
+## 🌟 Overview
 
 Modern health applications are often fragmented and require manual input. ArogyaAI solves this by creating a **fully automated, intelligent, and integrated platform** that connects:
 
@@ -20,9 +20,9 @@ Modern health applications are often fragmented and require manual input. Arogya
 
 ---
 
-# 🔥 Key Features
+## 🔥 Key Features
 
-## 🍎 AI Nutrition Intelligence
+**🍎 AI Nutrition Intelligence**
 - Snap food images → AI detects calories & macronutrients  
 - Automatic food logging (no manual input)  
 - Smart suggestions:
@@ -31,7 +31,7 @@ Modern health applications are often fragmented and require manual input. Arogya
 
 ---
 
-## 📊 Health Analytics & Dashboard
+**📊 Health Analytics & Dashboard**
 - Daily calorie + macro tracking  
 - Weekly & monthly health trends  
 - Goal-based progress visualization  
@@ -39,14 +39,14 @@ Modern health applications are often fragmented and require manual input. Arogya
 
 ---
 
-## 🏋️ AI Fitness Tracking
+**🏋️ AI Fitness Tracking**
 - Rep counting using AI  
 - Calories burned estimation  
 - Personalized workout recommendations  
 
 ---
 
-## 🧬 Personalized Health Engine
+**🧬 Personalized Health Engine**
 
 Uses:
 - Height, weight, goals  
@@ -57,9 +57,9 @@ Generates **highly customized diet + fitness plans**
 
 ---
 
-## ⌚ IoT-Based Health Monitoring (ESP32)
+**⌚ IoT-Based Health Monitoring (ESP32)**
 
-### Real-time biometric tracking:
+*Real-time biometric tracking:*
 - ❤️ Heart rate  
 - 🫀 ECG  
 - 🌡 Temperature  
@@ -70,7 +70,7 @@ Generates **highly customized diet + fitness plans**
 
 ---
 
-## 🤖 AI Doctor Consultation
+*🤖 AI Doctor Consultation*
 - Chat + Voice-enabled AI doctor  
 - Symptom analysis & recommendations  
 - Emergency keyword detection  
@@ -80,25 +80,25 @@ Generates **highly customized diet + fitness plans**
 
 ## 🔔 Automation & Notifications
 
-### Smart reminders:
+*Smart reminders:*
 - Water intake  
 - Calories  
 - Activity  
 
-### n8n automation workflows:
+*n8n automation workflows:*
 - Daily reports  
 - Email campaigns  
 - Engagement tracking  
 
 ---
 
-# 🧠 Unique Value Proposition
+## 🧠 Unique Value Proposition
 
 - ❌ No manual logging  
 - 🧠 Actionable insights (not just numbers)  
 - 🧬 Genetics + real-time sensors integration  
 
-### 🔄 Closed-loop system:
+*🔄 Closed-loop system:*
 **Eat → Analyze → Suggest → Track → Adjust**
 
 - 🌐 Full ecosystem: Mobile + Web + Hardware  
@@ -107,7 +107,7 @@ Generates **highly customized diet + fitness plans**
 
 ---
 
-# 🏗️ Project Architecture
+##🏗️ Project Architecture
 
 ```bash
 ArogyaAI/
@@ -120,23 +120,23 @@ ArogyaAI/
 
 ---
 
-# ⚙️ Tech Stack
+## ⚙️ Tech Stack
 
-## 💻 Frontend (Mobile)
+### 💻 Frontend (Mobile)
 - React Native (Expo)  
 - React Navigation  
 - React Query  
 
 ---
 
-## 🖥️ Backend
+### 🖥️ Backend
 - Node.js + Express  
 - PostgreSQL  
 - OpenAI APIs (GPT-4o, Whisper, TTS)  
 
 ---
 
-## 🔌 IoT & Hardware
+### 🔌 IoT & Hardware
 - ESP32 Microcontroller  
 - MAX30102 (Heart Rate + SpO2)  
 - AD8232 (ECG Sensor)  
@@ -144,7 +144,7 @@ ArogyaAI/
 
 ---
 
-## 🔄 Automation
+### 🔄 Automation
 - n8n workflows  
 - SMTP, Twilio, Slack integrations  
 
@@ -171,9 +171,9 @@ ArogyaAI/
 
 ---
 
-# ⚡ Quick Start
+## ⚡ Quick Start
 
-## 1️⃣ Backend Setup
+### 1️⃣ Backend Setup
 
 ```bash
 cd backend
@@ -184,7 +184,7 @@ npm run dev
 
 ---
 
-## 2️⃣ Mobile App
+### 2️⃣ Mobile App
 
 ```bash
 cd mobile
@@ -194,7 +194,7 @@ npx expo start
 
 ---
 
-## 3️⃣ ESP32 Setup
+### 3️⃣ ESP32 Setup
 
 - Upload firmware via Arduino IDE  
 - Connect sensors  
@@ -202,7 +202,7 @@ npx expo start
 
 ---
 
-## 4️⃣ Automation (n8n)
+### 4️⃣ Automation (n8n)
 
 ```bash
 npm install -g n8n
@@ -211,7 +211,7 @@ npx n8n
 
 ---
 
-# 🔗 API Modules
+## 🔗 API Modules
 
 - Authentication  
 - Meal Analysis  
@@ -221,7 +221,7 @@ npx n8n
 
 ---
 
-# 📈 Market Opportunity
+## 📈 Market Opportunity
 
 - 🌍 **1.1B+ people affected by obesity**  
 - 💉 **537M+ diabetes patients worldwide**  
@@ -233,7 +233,7 @@ npx n8n
 
 ---
 
-# 🚀 Future Scope
+## 🚀 Future Scope
 
 - Wearable integrations (Apple Watch, Fitbit)  
 - Disease prediction using AI  
@@ -242,7 +242,7 @@ npx n8n
 
 ---
 
-# 🤝 Contributing
+## 🤝 Contributing
 
 1. Fork the repo  
 2. Create feature branch  
@@ -251,25 +251,25 @@ npx n8n
 
 ---
 
-# 📄 License
+## 📄 License
 
 MIT License
 
 ---
 
-# 💡 Final Vision
+## 💡 Final Vision
 
 **ArogyaAI is redefining healthcare by shifting from reactive tracking to proactive, personalized intelligence.**
 
 ---
 
-# ❤️ Built With Passion
+## ❤️ Built With Passion
 
 ### By Team ArogyaAI  
 *Transforming health with AI*
 
 ---
 
-# ⭐ If You Like This Project
+## ⭐ If You Like This Project
 
 Give it a star ⭐ and support the innovation!
